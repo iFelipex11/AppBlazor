@@ -1,0 +1,250 @@
+﻿@page "/tipos-ensayo"
+@using Demosuelos.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Tipos de Ensayo</PageTitle>
+
+<h3>Tipos de Ensayo</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<EditForm Model="@modelo" OnValidSubmit="GuardarTipo">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Código</label>
+        <InputText class="form-control" @bind-Value="modelo.Codigo" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <InputText class="form-control" @bind-Value="modelo.Nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <InputTextArea class="form-control" @bind-Value="modelo.Descripcion" />
+    </div>
+
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input" @bind-Value="modelo.Activo" />
+        <label class="form-check-label">Activo</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2" disabled="@guardando">
+        @(modoEdicion ? "Actualizar" : "Guardar")
+    </button>
+
+    <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@guardando">
+        Cancelar
+    </button>
+</EditForm>
+
+<hr />
+
+<h4>Listado</h4>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (tipos.Count == 0)
+{
+    <p>No hay tipos de ensayo registrados.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Activo</th>
+                <th style="width:180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var tipo in tipos)
+            {
+                <tr>
+                    <td>@tipo.Id</td>
+                    <td>@tipo.Codigo</td>
+                    <td>@tipo.Nombre</td>
+                    <td>@tipo.Descripcion</td>
+                    <td>@(tipo.Activo ? "Sí" : "No")</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-warning me-2"
+                                @onclick="() => EditarTipo(tipo)">
+                            Editar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                @onclick="() => EliminarTipo(tipo.Id)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private TipoEnsayo modelo = new()
+    {
+        Activo = true
+    };
+
+    private List<TipoEnsayo> tipos = new();
+
+    private bool modoEdicion = false;
+    private bool cargando = false;
+    private bool guardando = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarTipos();
+    }
+
+    private async Task CargarTipos()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            tipos = await Http.GetFromJsonAsync<List<TipoEnsayo>>("api/tiposensayo") ?? new();
+        }
+        catch (Exception ex)
+        {
+            tipos = new();
+            mensajeError = $"Error al cargar tipos de ensayo: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarTipo()
+    {
+        guardando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (modoEdicion)
+            {
+                response = await Http.PutAsJsonAsync($"api/tiposensayo/{modelo.Id}", modelo);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/tiposensayo", modelo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = modoEdicion
+                    ? "Tipo de ensayo actualizado correctamente."
+                    : "Tipo de ensayo creado correctamente.";
+
+                LimpiarFormulario();
+                await CargarTipos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error al guardar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al guardar tipo de ensayo: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void EditarTipo(TipoEnsayo tipo)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new TipoEnsayo
+        {
+            Id = tipo.Id,
+            Codigo = tipo.Codigo,
+            Nombre = tipo.Nombre,
+            Descripcion = tipo.Descripcion,
+            Activo = tipo.Activo
+        };
+
+        modoEdicion = true;
+    }
+
+    private async Task EliminarTipo(int id)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/tiposensayo/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (modelo.Id == id)
+                {
+                    LimpiarFormulario();
+                }
+
+                mensajeOk = "Tipo de ensayo eliminado correctamente.";
+                await CargarTipos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo eliminar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al eliminar tipo de ensayo: {ex.Message}";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new TipoEnsayo
+        {
+            Activo = true
+        };
+
+        modoEdicion = false;
+    }
+}

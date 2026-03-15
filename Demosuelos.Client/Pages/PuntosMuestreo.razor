@@ -1,0 +1,271 @@
+﻿@page "/puntos-muestreo"
+@using Demosuelos.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Puntos de Muestreo</PageTitle>
+
+<h3>Puntos de Muestreo</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<EditForm Model="@modelo" OnValidSubmit="GuardarPunto">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Proyecto</label>
+        <InputSelect class="form-select" @bind-Value="modelo.ProyectoId">
+            <option value="0">Seleccione un proyecto</option>
+            @foreach (var proyecto in proyectos)
+            {
+                <option value="@proyecto.Id">@proyecto.Nombre</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Código</label>
+        <InputText class="form-control" @bind-Value="modelo.Codigo" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <InputText class="form-control" @bind-Value="modelo.Descripcion" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Coordenada X</label>
+        <InputText class="form-control" @bind-Value="modelo.CoordenadaX" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Coordenada Y</label>
+        <InputText class="form-control" @bind-Value="modelo.CoordenadaY" />
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2" disabled="@guardando">
+        @(modoEdicion ? "Actualizar" : "Guardar")
+    </button>
+
+    <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@guardando">
+        Cancelar
+    </button>
+</EditForm>
+
+<hr />
+
+<h4>Listado</h4>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (puntos.Count == 0)
+{
+    <p>No hay puntos de muestreo registrados.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Proyecto</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>X</th>
+                <th>Y</th>
+                <th style="width:180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var punto in puntos)
+            {
+                <tr>
+                    <td>@punto.Id</td>
+                    <td>@(punto.Proyecto?.Nombre ?? "")</td>
+                    <td>@punto.Codigo</td>
+                    <td>@punto.Descripcion</td>
+                    <td>@punto.CoordenadaX</td>
+                    <td>@punto.CoordenadaY</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-warning me-2"
+                                @onclick="() => EditarPunto(punto)">
+                            Editar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                @onclick="() => EliminarPunto(punto.Id)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private PuntoMuestreo modelo = new();
+    private List<PuntoMuestreo> puntos = new();
+    private List<Proyecto> proyectos = new();
+
+    private bool modoEdicion = false;
+    private bool cargando = false;
+    private bool guardando = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProyectos();
+        await CargarPuntos();
+    }
+
+    private async Task CargarProyectos()
+    {
+        try
+        {
+            proyectos = await Http.GetFromJsonAsync<List<Proyecto>>("api/proyectos") ?? new();
+        }
+        catch (Exception ex)
+        {
+            proyectos = new();
+            mensajeError = $"Error al cargar proyectos: {ex.Message}";
+        }
+    }
+
+    private async Task CargarPuntos()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            puntos = await Http.GetFromJsonAsync<List<PuntoMuestreo>>("api/puntosmuestreo") ?? new();
+        }
+        catch (Exception ex)
+        {
+            puntos = new();
+            mensajeError = $"Error al cargar puntos de muestreo: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarPunto()
+    {
+        guardando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (modoEdicion)
+            {
+                response = await Http.PutAsJsonAsync($"api/puntosmuestreo/{modelo.Id}", modelo);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/puntosmuestreo", modelo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = modoEdicion
+                    ? "Punto de muestreo actualizado correctamente."
+                    : "Punto de muestreo creado correctamente.";
+
+                LimpiarFormulario();
+                await CargarPuntos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error al guardar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al guardar punto de muestreo: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void EditarPunto(PuntoMuestreo punto)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new PuntoMuestreo
+        {
+            Id = punto.Id,
+            ProyectoId = punto.ProyectoId,
+            Codigo = punto.Codigo,
+            Descripcion = punto.Descripcion,
+            CoordenadaX = punto.CoordenadaX,
+            CoordenadaY = punto.CoordenadaY
+        };
+
+        modoEdicion = true;
+    }
+
+    private async Task EliminarPunto(int id)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/puntosmuestreo/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (modelo.Id == id)
+                {
+                    LimpiarFormulario();
+                }
+
+                mensajeOk = "Punto de muestreo eliminado correctamente.";
+                await CargarPuntos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo eliminar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al eliminar punto de muestreo: {ex.Message}";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new PuntoMuestreo();
+        modoEdicion = false;
+    }
+}

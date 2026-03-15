@@ -1,0 +1,183 @@
+﻿@page "/"
+@implements IAsyncDisposable
+@using System.Globalization
+@using System.Net.Http.Json
+@using Demosuelos.Models
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Inicio</PageTitle>
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h3>Laboratorio de Suelos</h3>
+        <p class="text-muted">Vista general de puntos de muestreo en mapa.</p>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Puntos de muestreo</h4>
+                    <p class="text-muted">Selecciona un punto para hacer zoom en el mapa.</p>
+
+                    @if (!string.IsNullOrWhiteSpace(mensaje))
+                    {
+                        <div class="alert alert-warning">@mensaje</div>
+                    }
+
+                    @if (estudios.Count == 0)
+                    {
+                        <p>No hay puntos con coordenadas válidas.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @foreach (var estudio in estudios)
+                            {
+                                <button type="button"
+                                        class="list-group-item list-group-item-action @(estudio.Id == estudioSeleccionadoId ? "active" : "")"
+                                        @onclick="() => IrAEstudio(estudio)">
+                                    <strong>@estudio.Nombre</strong><br />
+                                    <small>@estudio.Descripcion</small><br />
+                                    <small>Lat: @estudio.Lat - Lng: @estudio.Lng</small>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Mapa de puntos</h4>
+                    <div id="mapa-estudios" style="height: 560px; width: 100%; border-radius: 8px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int estudioSeleccionadoId;
+    private string? mensaje;
+    private List<EstudioMapa> estudios = new();
+    private bool mapaInicializado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarEstudios();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (mapaInicializado || estudios.Count == 0)
+            return;
+
+        await JS.InvokeVoidAsync(
+            "homeMap.initMap",
+            "mapa-estudios",
+            estudios.Select(e => new
+            {
+                id = e.Id,
+                nombre = e.Nombre,
+                descripcion = e.Descripcion,
+                lat = e.Lat,
+                lng = e.Lng
+            }).ToList());
+
+        mapaInicializado = true;
+    }
+
+    private async Task CargarEstudios()
+    {
+        try
+        {
+            var puntos = await Http.GetFromJsonAsync<List<PuntoMuestreo>>("api/puntosmuestreo") ?? new();
+
+            estudios = new List<EstudioMapa>();
+
+            foreach (var punto in puntos)
+            {
+                if (string.IsNullOrWhiteSpace(punto.CoordenadaX) || string.IsNullOrWhiteSpace(punto.CoordenadaY))
+                    continue;
+
+                var lngOk = TryParseCoordinate(punto.CoordenadaX, out var lat);
+                var latOk = TryParseCoordinate(punto.CoordenadaY, out var lng);
+
+                if (!latOk || !lngOk)
+                    continue;
+
+                if (lat is < -90 or > 90)
+                    continue;
+
+                if (lng is < -180 or > 180)
+                    continue;
+
+                estudios.Add(new EstudioMapa(
+                    punto.Id,
+                    punto.Codigo,
+                    $"{punto.Proyecto?.Nombre ?? "Sin proyecto"} - {punto.Descripcion ?? "Sin descripción"}",
+                    lat,
+                    lng));
+            }
+
+            if (estudios.Count == 0)
+            {
+                mensaje = "No encontré puntos de muestreo con coordenadas válidas en la base de datos.";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al cargar puntos para el mapa: {ex.Message}";
+            estudios = new();
+        }
+    }
+
+    private static bool TryParseCoordinate(string valor, out double numero)
+    {
+        numero = 0;
+
+        if (string.IsNullOrWhiteSpace(valor))
+            return false;
+
+        var normalizado = valor.Trim().Replace(",", ".");
+
+        return double.TryParse(
+            normalizado,
+            NumberStyles.Any,
+            CultureInfo.InvariantCulture,
+            out numero);
+    }
+
+    private async Task IrAEstudio(EstudioMapa estudio)
+    {
+        estudioSeleccionadoId = estudio.Id;
+
+        await JS.InvokeVoidAsync(
+            "homeMap.focusStudy",
+            estudio.Id,
+            estudio.Lat,
+            estudio.Lng);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("homeMap.destroyMap");
+        }
+        catch
+        {
+        }
+    }
+
+    private record EstudioMapa(
+        int Id,
+        string Nombre,
+        string Descripcion,
+        double Lat,
+        double Lng);
+}

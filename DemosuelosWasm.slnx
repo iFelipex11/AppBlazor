@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Demosuelos.Api/Demosuelos.Api.csproj" />
+  <Project Path="Demosuelos.Client/Demosuelos.Client.csproj" />
+  <Project Path="Demosuelos.Shared/Demosuelos.Shared.csproj" />
+</Solution>

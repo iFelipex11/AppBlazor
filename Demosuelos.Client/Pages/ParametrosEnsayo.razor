@@ -1,0 +1,287 @@
+﻿@page "/parametros-ensayo"
+@using Demosuelos.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Parámetros de Ensayo</PageTitle>
+
+<h3>Parámetros de Ensayo</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<EditForm Model="@modelo" OnValidSubmit="GuardarParametro">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Tipo de Ensayo</label>
+        <InputSelect class="form-select" @bind-Value="modelo.TipoEnsayoId">
+            <option value="0">Seleccione un tipo de ensayo</option>
+            @foreach (var tipo in tiposEnsayo)
+            {
+                <option value="@tipo.Id">@($"{tipo.Codigo} - {tipo.Nombre}")</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <InputText class="form-control" @bind-Value="modelo.Nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Unidad</label>
+        <InputText class="form-control" @bind-Value="modelo.Unidad" />
+    </div>
+
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input" @bind-Value="modelo.Requerido" />
+        <label class="form-check-label">Requerido</label>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Mínimo Referencial</label>
+        <InputNumber class="form-control" @bind-Value="modelo.MinReferencial" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Máximo Referencial</label>
+        <InputNumber class="form-control" @bind-Value="modelo.MaxReferencial" />
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2" disabled="@guardando">
+        @(modoEdicion ? "Actualizar" : "Guardar")
+    </button>
+
+    <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@guardando">
+        Cancelar
+    </button>
+</EditForm>
+
+<hr />
+
+<h4>Listado</h4>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (parametros.Count == 0)
+{
+    <p>No hay parámetros de ensayo registrados.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Tipo</th>
+                <th>Nombre</th>
+                <th>Unidad</th>
+                <th>Requerido</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th style="width:180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var parametro in parametros)
+            {
+                <tr>
+                    <td>@parametro.Id</td>
+                    <td>@(parametro.TipoEnsayo is null ? "" : $"{parametro.TipoEnsayo.Codigo} - {parametro.TipoEnsayo.Nombre}")</td>
+                    <td>@parametro.Nombre</td>
+                    <td>@parametro.Unidad</td>
+                    <td>@(parametro.Requerido ? "Sí" : "No")</td>
+                    <td>@(parametro.MinReferencial?.ToString() ?? "")</td>
+                    <td>@(parametro.MaxReferencial?.ToString() ?? "")</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-warning me-2"
+                                @onclick="() => EditarParametro(parametro)">
+                            Editar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                @onclick="() => EliminarParametro(parametro.Id)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private ParametroEnsayo modelo = new()
+    {
+        Requerido = true
+    };
+
+    private List<ParametroEnsayo> parametros = new();
+    private List<TipoEnsayo> tiposEnsayo = new();
+
+    private bool modoEdicion = false;
+    private bool cargando = false;
+    private bool guardando = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarTiposEnsayo();
+        await CargarParametros();
+    }
+
+    private async Task CargarTiposEnsayo()
+    {
+        try
+        {
+            tiposEnsayo = await Http.GetFromJsonAsync<List<TipoEnsayo>>("api/tiposensayo") ?? new();
+        }
+        catch (Exception ex)
+        {
+            tiposEnsayo = new();
+            mensajeError = $"Error al cargar tipos de ensayo: {ex.Message}";
+        }
+    }
+
+    private async Task CargarParametros()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            parametros = await Http.GetFromJsonAsync<List<ParametroEnsayo>>("api/parametrosensayo") ?? new();
+        }
+        catch (Exception ex)
+        {
+            parametros = new();
+            mensajeError = $"Error al cargar parámetros de ensayo: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarParametro()
+    {
+        guardando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (modoEdicion)
+            {
+                response = await Http.PutAsJsonAsync($"api/parametrosensayo/{modelo.Id}", modelo);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/parametrosensayo", modelo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = modoEdicion
+                    ? "Parámetro de ensayo actualizado correctamente."
+                    : "Parámetro de ensayo creado correctamente.";
+
+                LimpiarFormulario();
+                await CargarParametros();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error al guardar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al guardar parámetro de ensayo: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void EditarParametro(ParametroEnsayo parametro)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new ParametroEnsayo
+        {
+            Id = parametro.Id,
+            TipoEnsayoId = parametro.TipoEnsayoId,
+            Nombre = parametro.Nombre,
+            Unidad = parametro.Unidad,
+            Requerido = parametro.Requerido,
+            MinReferencial = parametro.MinReferencial,
+            MaxReferencial = parametro.MaxReferencial
+        };
+
+        modoEdicion = true;
+    }
+
+    private async Task EliminarParametro(int id)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/parametrosensayo/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (modelo.Id == id)
+                {
+                    LimpiarFormulario();
+                }
+
+                mensajeOk = "Parámetro de ensayo eliminado correctamente.";
+                await CargarParametros();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo eliminar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al eliminar parámetro de ensayo: {ex.Message}";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new ParametroEnsayo
+        {
+            Requerido = true
+        };
+
+        modoEdicion = false;
+    }
+}

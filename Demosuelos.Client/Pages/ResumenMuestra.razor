@@ -1,0 +1,275 @@
+﻿@page "/resumen-muestra"
+@using Demosuelos.Models
+@using Demosuelos.Shared.Contracts
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Resumen de Muestra</PageTitle>
+
+<h3>Resumen de Muestra</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<div class="mb-3">
+    <label class="form-label">Muestra</label>
+    <InputSelect class="form-select" @bind-Value="muestraSeleccionadaId">
+        <option value="0">Seleccione una muestra</option>
+        @foreach (var muestra in muestras)
+        {
+            <option value="@muestra.Id">
+                @($"{muestra.CodigoMuestra} - {muestra.PuntoMuestreo?.Codigo}")
+            </option>
+        }
+    </InputSelect>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-primary me-2" @onclick="CargarResumen" disabled="@(muestraSeleccionadaId == 0 || cargando)">
+        Ver resumen
+    </button>
+
+    <button class="btn btn-secondary me-2" @onclick="RevalidarResumen" disabled="@(muestraSeleccionadaId == 0 || cargando)">
+        Revalidar
+    </button>
+
+    <button class="btn btn-dark" @onclick="GenerarInterpretacionIa" disabled="@(muestraSeleccionadaId == 0 || cargando || cargandoIa || resumen is null)">
+        @(cargandoIa ? "Generando..." : "Interpretar con IA")
+    </button>
+</div>
+
+@if (cargando)
+{
+    <p>Cargando resumen...</p>
+}
+else if (resumen is not null)
+{
+    <hr />
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Datos generales</h5>
+
+            <p><strong>Muestra:</strong> @resumen.CodigoMuestra</p>
+            <p><strong>Estado:</strong> @resumen.EstadoMuestra</p>
+            <p><strong>Humedad Natural:</strong> @(resumen.HumedadNatural?.ToString() ?? "N/A")</p>
+            <p><strong>Límite Líquido:</strong> @(resumen.LimiteLiquido?.ToString() ?? "N/A")</p>
+            <p><strong>Límite Plástico:</strong> @(resumen.LimitePlastico?.ToString() ?? "N/A")</p>
+            <p><strong>Índice de Plasticidad:</strong> @(resumen.IndicePlasticidad?.ToString() ?? "N/A")</p>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Mensajes técnicos</h5>
+
+            @if (resumen.Mensajes.Count == 0)
+            {
+                <p>Sin mensajes técnicos.</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var mensaje in resumen.Mensajes)
+                    {
+                        <li>
+                            <strong>@mensaje.Tipo:</strong> @mensaje.Texto
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Detalle de resultados</h5>
+
+            @if (resumen.Resultados.Count == 0)
+            {
+                <p>No hay resultados asociados.</p>
+            }
+            else
+            {
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Parámetro</th>
+                            <th>Valor</th>
+                            <th>Min</th>
+                            <th>Max</th>
+                            <th>Cumple Rango</th>
+                            <th>Observación Técnica</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in resumen.Resultados)
+                        {
+                            <tr>
+                                <td>@item.Parametro</td>
+                                <td>@(item.Valor?.ToString() ?? "")</td>
+                                <td>@(item.MinReferencial?.ToString() ?? "")</td>
+                                <td>@(item.MaxReferencial?.ToString() ?? "")</td>
+                                <td>
+                                    @(item.CumpleRango.HasValue
+                                        ? (item.CumpleRango.Value ? "Sí" : "No")
+                                        : "N/A")
+                                </td>
+                                <td>@item.ObservacionTecnica</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(interpretacionIa))
+    {
+        <div class="card mb-3 border-dark">
+            <div class="card-body">
+                <h5 class="card-title">Interpretación asistida por IA</h5>
+                <p>@interpretacionIa</p>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Muestra> muestras = new();
+    private int muestraSeleccionadaId;
+    private ResultadoResumenMuestra? resumen;
+
+    private bool cargando = false;
+    private bool cargandoIa = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+    private string interpretacionIa = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarMuestras();
+    }
+
+    private async Task CargarMuestras()
+    {
+        try
+        {
+            muestras = await Http.GetFromJsonAsync<List<Muestra>>("api/muestras") ?? new();
+        }
+        catch (Exception ex)
+        {
+            muestras = new();
+            mensajeError = $"Error al cargar muestras: {ex.Message}";
+        }
+    }
+
+    private async Task CargarResumen()
+    {
+        if (muestraSeleccionadaId == 0)
+            return;
+
+        cargando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+        interpretacionIa = string.Empty;
+
+        try
+        {
+            resumen = await Http.GetFromJsonAsync<ResultadoResumenMuestra>(
+                $"api/resumen/muestra/{muestraSeleccionadaId}");
+        }
+        catch (Exception ex)
+        {
+            resumen = null;
+            mensajeError = $"Error al cargar resumen: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task RevalidarResumen()
+    {
+        if (muestraSeleccionadaId == 0)
+            return;
+
+        cargando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+        interpretacionIa = string.Empty;
+
+        try
+        {
+            var response = await Http.PostAsync($"api/resumen/revalidar/{muestraSeleccionadaId}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = "Resumen recalculado correctamente.";
+                await CargarResumen();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo recalcular: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al recalcular resumen: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GenerarInterpretacionIa()
+    {
+        if (muestraSeleccionadaId == 0 || resumen is null)
+            return;
+
+        cargandoIa = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+        interpretacionIa = string.Empty;
+
+        try
+        {
+            var response = await Http.PostAsync($"api/interpretacion/muestra/{muestraSeleccionadaId}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var data = await response.Content.ReadFromJsonAsync<InterpretacionIaResponse>();
+
+                if (data is not null)
+                {
+                    interpretacionIa = data.Interpretacion ?? string.Empty;
+                    mensajeOk = data.Mensaje;
+                }
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo generar la interpretación: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al generar interpretación IA: {ex.Message}";
+        }
+        finally
+        {
+            cargandoIa = false;
+        }
+    }
+}

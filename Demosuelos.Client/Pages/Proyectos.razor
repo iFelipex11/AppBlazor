@@ -1,0 +1,250 @@
+﻿@page "/proyectos"
+@using Demosuelos.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Proyectos</PageTitle>
+
+<h3>Proyectos</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<EditForm Model="@modelo" OnValidSubmit="GuardarProyecto">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <InputText class="form-control" @bind-Value="modelo.Nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Cliente</label>
+        <InputText class="form-control" @bind-Value="modelo.Cliente" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Ubicación</label>
+        <InputText class="form-control" @bind-Value="modelo.Ubicacion" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Estado</label>
+        <InputText class="form-control" @bind-Value="modelo.Estado" />
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2" disabled="@guardando">
+        @(modoEdicion ? "Actualizar" : "Guardar")
+    </button>
+
+    <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@guardando">
+        Cancelar
+    </button>
+</EditForm>
+
+<hr />
+
+<h4>Listado</h4>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (proyectos.Count == 0)
+{
+    <p>No hay proyectos registrados.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nombre</th>
+                <th>Cliente</th>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th style="width:180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var proyecto in proyectos)
+            {
+                <tr>
+                    <td>@proyecto.Id</td>
+                    <td>@proyecto.Nombre</td>
+                    <td>@proyecto.Cliente</td>
+                    <td>@proyecto.Ubicacion</td>
+                    <td>@proyecto.Estado</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-warning me-2"
+                                @onclick="() => EditarProyecto(proyecto)">
+                            Editar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                @onclick="() => EliminarProyecto(proyecto.Id)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Proyecto modelo = new()
+    {
+        Estado = "Activo"
+    };
+
+    private List<Proyecto> proyectos = new();
+    private bool modoEdicion = false;
+    private bool cargando = false;
+    private bool guardando = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProyectos();
+    }
+
+    private async Task CargarProyectos()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            var data = await Http.GetFromJsonAsync<List<Proyecto>>("api/proyectos");
+            proyectos = data ?? new List<Proyecto>();
+        }
+        catch (Exception ex)
+        {
+            proyectos = new List<Proyecto>();
+            mensajeError = $"Error al cargar proyectos: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarProyecto()
+    {
+        guardando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (modoEdicion)
+            {
+                response = await Http.PutAsJsonAsync($"api/proyectos/{modelo.Id}", modelo);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/proyectos", modelo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = modoEdicion
+                    ? "Proyecto actualizado correctamente."
+                    : "Proyecto creado correctamente.";
+
+                LimpiarFormulario();
+                await CargarProyectos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error al guardar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al guardar proyecto: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void EditarProyecto(Proyecto proyecto)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new Proyecto
+        {
+            Id = proyecto.Id,
+            Nombre = proyecto.Nombre,
+            Cliente = proyecto.Cliente,
+            Ubicacion = proyecto.Ubicacion,
+            Estado = proyecto.Estado
+        };
+
+        modoEdicion = true;
+    }
+
+    private async Task EliminarProyecto(int id)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/proyectos/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (modelo.Id == id)
+                {
+                    LimpiarFormulario();
+                }
+
+                mensajeOk = "Proyecto eliminado correctamente.";
+                await CargarProyectos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo eliminar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al eliminar proyecto: {ex.Message}";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new Proyecto
+        {
+            Estado = "Activo"
+        };
+
+        modoEdicion = false;
+    }
+}

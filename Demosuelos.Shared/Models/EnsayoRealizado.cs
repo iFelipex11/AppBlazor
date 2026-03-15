@@ -1,0 +1,26 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Demosuelos.Models;
+
+public class EnsayoRealizado
+{
+    public int Id { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una muestra.")]
+    public int MuestraId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un tipo de ensayo.")]
+    public int TipoEnsayoId { get; set; }
+
+    public DateTime FechaEnsayo { get; set; } = DateTime.Now;
+
+    [MaxLength(100)]
+    public string? Responsable { get; set; }
+
+    [Required]
+    [MaxLength(50)]
+    public string Estado { get; set; } = "Pendiente";
+
+    public Muestra? Muestra { get; set; }
+    public TipoEnsayo? TipoEnsayo { get; set; }
+}

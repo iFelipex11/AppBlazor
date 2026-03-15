@@ -1,0 +1,291 @@
+﻿@page "/muestras"
+@using Demosuelos.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Muestras</PageTitle>
+
+<h3>Muestras</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<EditForm Model="@modelo" OnValidSubmit="GuardarMuestra">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Punto de Muestreo</label>
+        <InputSelect class="form-select" @bind-Value="modelo.PuntoMuestreoId">
+            <option value="0">Seleccione un punto de muestreo</option>
+            @foreach (var punto in puntos)
+            {
+                <option value="@punto.Id">
+                    @($"{punto.Codigo} - {punto.Proyecto?.Nombre}")
+                </option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Código de Muestra</label>
+        <InputText class="form-control" @bind-Value="modelo.CodigoMuestra" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de Recepción</label>
+        <InputDate class="form-control" @bind-Value="modelo.FechaRecepcion" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Tipo de Muestra</label>
+        <InputText class="form-control" @bind-Value="modelo.TipoMuestra" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Estado de la Muestra</label>
+        <InputText class="form-control" @bind-Value="modelo.EstadoMuestra" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Observaciones</label>
+        <InputTextArea class="form-control" @bind-Value="modelo.Observaciones" />
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2" disabled="@guardando">
+        @(modoEdicion ? "Actualizar" : "Guardar")
+    </button>
+
+    <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@guardando">
+        Cancelar
+    </button>
+</EditForm>
+
+<hr />
+
+<h4>Listado</h4>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (muestras.Count == 0)
+{
+    <p>No hay muestras registradas.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Punto</th>
+                <th>Proyecto</th>
+                <th>Código</th>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th style="width:180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var muestra in muestras)
+            {
+                <tr>
+                    <td>@muestra.Id</td>
+                    <td>@(muestra.PuntoMuestreo?.Codigo ?? "")</td>
+                    <td>@(muestra.PuntoMuestreo?.Proyecto?.Nombre ?? "")</td>
+                    <td>@muestra.CodigoMuestra</td>
+                    <td>@muestra.FechaRecepcion.ToString("yyyy-MM-dd")</td>
+                    <td>@muestra.TipoMuestra</td>
+                    <td>@muestra.EstadoMuestra</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-warning me-2"
+                                @onclick="() => EditarMuestra(muestra)">
+                            Editar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                @onclick="() => EliminarMuestra(muestra.Id)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Muestra modelo = new()
+    {
+        FechaRecepcion = DateTime.Today,
+        EstadoMuestra = "Registrada"
+    };
+
+    private List<Muestra> muestras = new();
+    private List<PuntoMuestreo> puntos = new();
+
+    private bool modoEdicion = false;
+    private bool cargando = false;
+    private bool guardando = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPuntos();
+        await CargarMuestras();
+    }
+
+    private async Task CargarPuntos()
+    {
+        try
+        {
+            puntos = await Http.GetFromJsonAsync<List<PuntoMuestreo>>("api/puntosmuestreo") ?? new();
+        }
+        catch (Exception ex)
+        {
+            puntos = new();
+            mensajeError = $"Error al cargar puntos de muestreo: {ex.Message}";
+        }
+    }
+
+    private async Task CargarMuestras()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            muestras = await Http.GetFromJsonAsync<List<Muestra>>("api/muestras") ?? new();
+        }
+        catch (Exception ex)
+        {
+            muestras = new();
+            mensajeError = $"Error al cargar muestras: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarMuestra()
+    {
+        guardando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (modoEdicion)
+            {
+                response = await Http.PutAsJsonAsync($"api/muestras/{modelo.Id}", modelo);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/muestras", modelo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = modoEdicion
+                    ? "Muestra actualizada correctamente."
+                    : "Muestra creada correctamente.";
+
+                LimpiarFormulario();
+                await CargarMuestras();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error al guardar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al guardar muestra: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void EditarMuestra(Muestra muestra)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new Muestra
+        {
+            Id = muestra.Id,
+            PuntoMuestreoId = muestra.PuntoMuestreoId,
+            CodigoMuestra = muestra.CodigoMuestra,
+            FechaRecepcion = muestra.FechaRecepcion,
+            TipoMuestra = muestra.TipoMuestra,
+            EstadoMuestra = muestra.EstadoMuestra,
+            Observaciones = muestra.Observaciones
+        };
+
+        modoEdicion = true;
+    }
+
+    private async Task EliminarMuestra(int id)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/muestras/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (modelo.Id == id)
+                {
+                    LimpiarFormulario();
+                }
+
+                mensajeOk = "Muestra eliminada correctamente.";
+                await CargarMuestras();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo eliminar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al eliminar muestra: {ex.Message}";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new Muestra
+        {
+            FechaRecepcion = DateTime.Today,
+            EstadoMuestra = "Registrada"
+        };
+
+        modoEdicion = false;
+    }
+}

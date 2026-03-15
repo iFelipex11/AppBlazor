@@ -1,0 +1,306 @@
+﻿@page "/ensayos-realizados"
+@using Demosuelos.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Ensayos Realizados</PageTitle>
+
+<h3>Ensayos Realizados</h3>
+
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(mensajeOk))
+{
+    <div class="alert alert-success">@mensajeOk</div>
+}
+
+<EditForm Model="@modelo" OnValidSubmit="GuardarEnsayo">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Muestra</label>
+        <InputSelect class="form-select" @bind-Value="modelo.MuestraId">
+            <option value="0">Seleccione una muestra</option>
+            @foreach (var muestra in muestras)
+            {
+                <option value="@muestra.Id">
+                    @($"{muestra.CodigoMuestra} - {(muestra.PuntoMuestreo?.Codigo ?? "")}")
+                </option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Tipo de Ensayo</label>
+        <InputSelect class="form-select" @bind-Value="modelo.TipoEnsayoId">
+            <option value="0">Seleccione un tipo de ensayo</option>
+            @foreach (var tipo in tiposEnsayo)
+            {
+                <option value="@tipo.Id">@($"{tipo.Codigo} - {tipo.Nombre}")</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de Ensayo</label>
+        <InputDate class="form-control" @bind-Value="modelo.FechaEnsayo" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Responsable</label>
+        <InputText class="form-control" @bind-Value="modelo.Responsable" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Estado</label>
+        <InputText class="form-control" @bind-Value="modelo.Estado" />
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2" disabled="@guardando">
+        @(modoEdicion ? "Actualizar" : "Guardar")
+    </button>
+
+    <button type="button" class="btn btn-secondary" @onclick="LimpiarFormulario" disabled="@guardando">
+        Cancelar
+    </button>
+</EditForm>
+
+<hr />
+
+<h4>Listado</h4>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (ensayos.Count == 0)
+{
+    <p>No hay ensayos realizados registrados.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Muestra</th>
+                <th>Punto</th>
+                <th>Tipo Ensayo</th>
+                <th>Fecha</th>
+                <th>Responsable</th>
+                <th>Estado</th>
+                <th style="width:180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ensayo in ensayos)
+            {
+                <tr>
+                    <td>@ensayo.Id</td>
+                    <td>@(ensayo.Muestra?.CodigoMuestra ?? "")</td>
+                    <td>@(ensayo.Muestra?.PuntoMuestreo?.Codigo ?? "")</td>
+                    <td>@(ensayo.TipoEnsayo is null ? "" : $"{ensayo.TipoEnsayo.Codigo} - {ensayo.TipoEnsayo.Nombre}")</td>
+                    <td>@ensayo.FechaEnsayo.ToString("yyyy-MM-dd")</td>
+                    <td>@ensayo.Responsable</td>
+                    <td>@ensayo.Estado</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-warning me-2"
+                                @onclick="() => EditarEnsayo(ensayo)">
+                            Editar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                @onclick="() => EliminarEnsayo(ensayo.Id)">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private EnsayoRealizado modelo = new()
+    {
+        FechaEnsayo = DateTime.Today,
+        Estado = "Pendiente"
+    };
+
+    private List<EnsayoRealizado> ensayos = new();
+    private List<Muestra> muestras = new();
+    private List<TipoEnsayo> tiposEnsayo = new();
+
+    private bool modoEdicion = false;
+    private bool cargando = false;
+    private bool guardando = false;
+
+    private string mensajeError = string.Empty;
+    private string mensajeOk = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarMuestras();
+        await CargarTiposEnsayo();
+        await CargarEnsayos();
+    }
+
+    private async Task CargarMuestras()
+    {
+        try
+        {
+            muestras = await Http.GetFromJsonAsync<List<Muestra>>("api/muestras") ?? new();
+        }
+        catch (Exception ex)
+        {
+            muestras = new();
+            mensajeError = $"Error al cargar muestras: {ex.Message}";
+        }
+    }
+
+    private async Task CargarTiposEnsayo()
+    {
+        try
+        {
+            tiposEnsayo = await Http.GetFromJsonAsync<List<TipoEnsayo>>("api/tiposensayo") ?? new();
+        }
+        catch (Exception ex)
+        {
+            tiposEnsayo = new();
+            mensajeError = $"Error al cargar tipos de ensayo: {ex.Message}";
+        }
+    }
+
+    private async Task CargarEnsayos()
+    {
+        cargando = true;
+        mensajeError = string.Empty;
+
+        try
+        {
+            ensayos = await Http.GetFromJsonAsync<List<EnsayoRealizado>>("api/ensayos") ?? new();
+        }
+        catch (Exception ex)
+        {
+            ensayos = new();
+            mensajeError = $"Error al cargar ensayos realizados: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarEnsayo()
+    {
+        guardando = true;
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (modoEdicion)
+            {
+                response = await Http.PutAsJsonAsync($"api/ensayos/{modelo.Id}", modelo);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/ensayos", modelo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                mensajeOk = modoEdicion
+                    ? "Ensayo realizado actualizado correctamente."
+                    : "Ensayo realizado creado correctamente.";
+
+                LimpiarFormulario();
+                await CargarEnsayos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"Error al guardar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al guardar ensayo realizado: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void EditarEnsayo(EnsayoRealizado ensayo)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new EnsayoRealizado
+        {
+            Id = ensayo.Id,
+            MuestraId = ensayo.MuestraId,
+            TipoEnsayoId = ensayo.TipoEnsayoId,
+            FechaEnsayo = ensayo.FechaEnsayo,
+            Responsable = ensayo.Responsable,
+            Estado = ensayo.Estado
+        };
+
+        modoEdicion = true;
+    }
+
+    private async Task EliminarEnsayo(int id)
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/ensayos/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                if (modelo.Id == id)
+                {
+                    LimpiarFormulario();
+                }
+
+                mensajeOk = "Ensayo realizado eliminado correctamente.";
+                await CargarEnsayos();
+            }
+            else
+            {
+                var detalle = await response.Content.ReadAsStringAsync();
+                mensajeError = $"No se pudo eliminar: {detalle}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al eliminar ensayo realizado: {ex.Message}";
+        }
+    }
+
+    private void LimpiarFormulario()
+    {
+        mensajeError = string.Empty;
+        mensajeOk = string.Empty;
+
+        modelo = new EnsayoRealizado
+        {
+            FechaEnsayo = DateTime.Today,
+            Estado = "Pendiente"
+        };
+
+        modoEdicion = false;
+    }
+}

@@ -25,7 +25,7 @@ public class EnsayosController : ControllerBase
             .Include(x => x.Muestra)
                 .ThenInclude(m => m!.PuntoMuestreo)
             .Include(x => x.TipoEnsayo)
-            .OrderByDescending(x => x.FechaEnsayo)
+            .OrderByDescending(x => x.FechaEjecucion)
             .ThenBy(x => x.Id)
             .ToListAsync();
 
@@ -71,11 +71,23 @@ public class EnsayosController : ControllerBase
         if (duplicado)
             return BadRequest("Ya existe ese tipo de ensayo para la muestra seleccionada.");
 
+        ensayo.Responsable = ensayo.Responsable?.Trim();
+
         if (string.IsNullOrWhiteSpace(ensayo.Responsable))
             return BadRequest("Debes ingresar el responsable del ensayo.");
 
-        if (string.IsNullOrWhiteSpace(ensayo.Estado))
-            ensayo.Estado = "Pendiente";
+        ensayo.Estado = string.IsNullOrWhiteSpace(ensayo.Estado)
+            ? "Pendiente"
+            : ensayo.Estado.Trim();
+
+        if (ensayo.FechaAsignacion == default)
+            ensayo.FechaAsignacion = DateTime.Today;
+
+        if (ensayo.FechaEjecucion == default)
+            ensayo.FechaEjecucion = DateTime.Today;
+
+        if (ensayo.FechaValidacion.HasValue && ensayo.FechaValidacion.Value == default)
+            ensayo.FechaValidacion = null;
 
         db.EnsayosRealizados.Add(ensayo);
         await db.SaveChangesAsync();
@@ -120,14 +132,20 @@ public class EnsayosController : ControllerBase
         if (duplicado)
             return BadRequest("Ya existe otro ensayo con ese tipo para la muestra seleccionada.");
 
+        ensayo.Responsable = ensayo.Responsable?.Trim();
+
         if (string.IsNullOrWhiteSpace(ensayo.Responsable))
             return BadRequest("Debes ingresar el responsable del ensayo.");
 
         existente.MuestraId = ensayo.MuestraId;
         existente.TipoEnsayoId = ensayo.TipoEnsayoId;
-        existente.FechaEnsayo = ensayo.FechaEnsayo;
+        existente.FechaAsignacion = ensayo.FechaAsignacion == default ? existente.FechaAsignacion : ensayo.FechaAsignacion;
+        existente.FechaEjecucion = ensayo.FechaEjecucion == default ? DateTime.Today : ensayo.FechaEjecucion;
+        existente.FechaValidacion = ensayo.FechaValidacion.HasValue && ensayo.FechaValidacion.Value == default
+            ? null
+            : ensayo.FechaValidacion;
         existente.Responsable = ensayo.Responsable;
-        existente.Estado = string.IsNullOrWhiteSpace(ensayo.Estado) ? "Pendiente" : ensayo.Estado;
+        existente.Estado = string.IsNullOrWhiteSpace(ensayo.Estado) ? "Pendiente" : ensayo.Estado.Trim();
 
         await db.SaveChangesAsync();
 

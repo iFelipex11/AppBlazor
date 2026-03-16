@@ -46,8 +46,18 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Fecha de Ensayo</label>
-        <InputDate class="form-control" @bind-Value="modelo.FechaEnsayo" />
+        <label class="form-label">Fecha de Asignación</label>
+        <InputDate class="form-control" @bind-Value="modelo.FechaAsignacion" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de Ejecución</label>
+        <InputDate class="form-control" @bind-Value="modelo.FechaEjecucion" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha de Validación</label>
+        <InputDate class="form-control" @bind-Value="modelo.FechaValidacion" />
     </div>
 
     <div class="mb-3">
@@ -90,7 +100,9 @@ else
                 <th>Muestra</th>
                 <th>Punto</th>
                 <th>Tipo Ensayo</th>
-                <th>Fecha</th>
+                <th>F. Asignación</th>
+                <th>F. Ejecución</th>
+                <th>F. Validación</th>
                 <th>Responsable</th>
                 <th>Estado</th>
                 <th style="width:180px;">Acciones</th>
@@ -104,7 +116,9 @@ else
                     <td>@(ensayo.Muestra?.CodigoMuestra ?? "")</td>
                     <td>@(ensayo.Muestra?.PuntoMuestreo?.Codigo ?? "")</td>
                     <td>@(ensayo.TipoEnsayo is null ? "" : $"{ensayo.TipoEnsayo.Codigo} - {ensayo.TipoEnsayo.Nombre}")</td>
-                    <td>@ensayo.FechaEnsayo.ToString("yyyy-MM-dd")</td>
+                    <td>@ensayo.FechaAsignacion.ToString("yyyy-MM-dd")</td>
+                    <td>@ensayo.FechaEjecucion.ToString("yyyy-MM-dd")</td>
+                    <td>@(ensayo.FechaValidacion?.ToString("yyyy-MM-dd") ?? "")</td>
                     <td>@ensayo.Responsable</td>
                     <td>@ensayo.Estado</td>
                     <td>
@@ -129,7 +143,9 @@ else
 @code {
     private EnsayoRealizado modelo = new()
     {
-        FechaEnsayo = DateTime.Today,
+        FechaAsignacion = DateTime.Today,
+        FechaEjecucion = DateTime.Today,
+        FechaValidacion = null,
         Estado = "Pendiente"
     };
 
@@ -251,7 +267,9 @@ else
             Id = ensayo.Id,
             MuestraId = ensayo.MuestraId,
             TipoEnsayoId = ensayo.TipoEnsayoId,
-            FechaEnsayo = ensayo.FechaEnsayo,
+            FechaAsignacion = ensayo.FechaAsignacion,
+            FechaEjecucion = ensayo.FechaEjecucion,
+            FechaValidacion = ensayo.FechaValidacion,
             Responsable = ensayo.Responsable,
             Estado = ensayo.Estado
         };
@@ -297,7 +315,9 @@ else
 
         modelo = new EnsayoRealizado
         {
-            FechaEnsayo = DateTime.Today,
+            FechaAsignacion = DateTime.Today,
+            FechaEjecucion = DateTime.Today,
+            FechaValidacion = null,
             Estado = "Pendiente"
         };
 

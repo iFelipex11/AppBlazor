@@ -42,9 +42,14 @@
         <InputText class="form-control" @bind-Value="modelo.Unidad" />
     </div>
 
-    <div class="form-check mb-3">
+    <div class="form-check mb-2">
         <InputCheckbox class="form-check-input" @bind-Value="modelo.Requerido" />
         <label class="form-check-label">Requerido</label>
+    </div>
+
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input" @bind-Value="modelo.EsCalculado" />
+        <label class="form-check-label">Es calculado</label>
     </div>
 
     <div class="mb-3">
@@ -76,7 +81,7 @@
 }
 else if (parametros.Count == 0)
 {
-    <p>No hay parámetros de ensayo registrados.</p>
+    <p>No hay parámetros registrados.</p>
 }
 else
 {
@@ -88,8 +93,9 @@ else
                 <th>Nombre</th>
                 <th>Unidad</th>
                 <th>Requerido</th>
-                <th>Min</th>
-                <th>Max</th>
+                <th>Calculado</th>
+                <th>Mínimo</th>
+                <th>Máximo</th>
                 <th style="width:180px;">Acciones</th>
             </tr>
         </thead>
@@ -102,8 +108,9 @@ else
                     <td>@parametro.Nombre</td>
                     <td>@parametro.Unidad</td>
                     <td>@(parametro.Requerido ? "Sí" : "No")</td>
-                    <td>@(parametro.MinReferencial?.ToString() ?? "")</td>
-                    <td>@(parametro.MaxReferencial?.ToString() ?? "")</td>
+                    <td>@(parametro.EsCalculado ? "Sí" : "No")</td>
+                    <td>@(parametro.MinReferencial?.ToString("0.####") ?? "")</td>
+                    <td>@(parametro.MaxReferencial?.ToString("0.####") ?? "")</td>
                     <td>
                         <button type="button"
                                 class="btn btn-sm btn-warning me-2"
@@ -126,7 +133,8 @@ else
 @code {
     private ParametroEnsayo modelo = new()
     {
-        Requerido = true
+        Requerido = true,
+        EsCalculado = false
     };
 
     private List<ParametroEnsayo> parametros = new();
@@ -170,7 +178,7 @@ else
         catch (Exception ex)
         {
             parametros = new();
-            mensajeError = $"Error al cargar parámetros de ensayo: {ex.Message}";
+            mensajeError = $"Error al cargar parámetros: {ex.Message}";
         }
         finally
         {
@@ -200,8 +208,8 @@ else
             if (response.IsSuccessStatusCode)
             {
                 mensajeOk = modoEdicion
-                    ? "Parámetro de ensayo actualizado correctamente."
-                    : "Parámetro de ensayo creado correctamente.";
+                    ? "Parámetro actualizado correctamente."
+                    : "Parámetro creado correctamente.";
 
                 LimpiarFormulario();
                 await CargarParametros();
@@ -214,7 +222,7 @@ else
         }
         catch (Exception ex)
         {
-            mensajeError = $"Error al guardar parámetro de ensayo: {ex.Message}";
+            mensajeError = $"Error al guardar parámetro: {ex.Message}";
         }
         finally
         {
@@ -234,6 +242,7 @@ else
             Nombre = parametro.Nombre,
             Unidad = parametro.Unidad,
             Requerido = parametro.Requerido,
+            EsCalculado = parametro.EsCalculado,
             MinReferencial = parametro.MinReferencial,
             MaxReferencial = parametro.MaxReferencial
         };
@@ -257,7 +266,7 @@ else
                     LimpiarFormulario();
                 }
 
-                mensajeOk = "Parámetro de ensayo eliminado correctamente.";
+                mensajeOk = "Parámetro eliminado correctamente.";
                 await CargarParametros();
             }
             else
@@ -268,7 +277,7 @@ else
         }
         catch (Exception ex)
         {
-            mensajeError = $"Error al eliminar parámetro de ensayo: {ex.Message}";
+            mensajeError = $"Error al eliminar parámetro: {ex.Message}";
         }
     }
 
@@ -279,7 +288,8 @@ else
 
         modelo = new ParametroEnsayo
         {
-            Requerido = true
+            Requerido = true,
+            EsCalculado = false
         };
 
         modoEdicion = false;

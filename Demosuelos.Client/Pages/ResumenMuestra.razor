@@ -55,10 +55,24 @@ else if (resumen is not null)
 
     <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">Datos generales</h5>
+            <h5 class="card-title">Trazabilidad de la muestra</h5>
 
+            <p><strong>Proyecto:</strong> @(muestraSeleccionada?.PuntoMuestreo?.Proyecto?.Nombre ?? "N/A")</p>
+            <p><strong>Punto de muestreo:</strong> @(muestraSeleccionada?.PuntoMuestreo?.Codigo ?? "N/A")</p>
+            <p><strong>Sector:</strong> @(muestraSeleccionada?.PuntoMuestreo?.Sector ?? "N/A")</p>
             <p><strong>Muestra:</strong> @resumen.CodigoMuestra</p>
             <p><strong>Estado:</strong> @resumen.EstadoMuestra</p>
+            <p><strong>Fecha de muestreo:</strong> @(muestraSeleccionada is not null ? muestraSeleccionada.FechaMuestreo.ToString("yyyy-MM-dd") : "N/A")</p>
+            <p><strong>Fecha de recepción:</strong> @(muestraSeleccionada is not null ? muestraSeleccionada.FechaRecepcion.ToString("yyyy-MM-dd") : "N/A")</p>
+            <p><strong>Profundidad inicial:</strong> @(muestraSeleccionada?.ProfundidadInicial?.ToString("0.##") ?? "N/A")</p>
+            <p><strong>Profundidad final:</strong> @(muestraSeleccionada?.ProfundidadFinal?.ToString("0.##") ?? "N/A")</p>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Resumen técnico</h5>
+
             <p><strong>Humedad Natural:</strong> @(resumen.HumedadNatural?.ToString() ?? "N/A")</p>
             <p><strong>Límite Líquido:</strong> @(resumen.LimiteLiquido?.ToString() ?? "N/A")</p>
             <p><strong>Límite Plástico:</strong> @(resumen.LimitePlastico?.ToString() ?? "N/A")</p>
@@ -153,6 +167,9 @@ else if (resumen is not null)
     private string mensajeError = string.Empty;
     private string mensajeOk = string.Empty;
     private string interpretacionIa = string.Empty;
+
+    private Muestra? muestraSeleccionada =>
+        muestras.FirstOrDefault(x => x.Id == muestraSeleccionadaId);
 
     protected override async Task OnInitializedAsync()
     {

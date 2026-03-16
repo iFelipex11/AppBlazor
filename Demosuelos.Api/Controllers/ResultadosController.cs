@@ -31,6 +31,7 @@ public class ResultadosController : ControllerBase
                 .ThenInclude(p => p!.TipoEnsayo)
             .Include(x => x.EnsayoRealizado)
                 .ThenInclude(e => e!.Muestra)
+                    .ThenInclude(m => m!.PuntoMuestreo)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
 
@@ -45,6 +46,7 @@ public class ResultadosController : ControllerBase
         var resultados = await db.ResultadosParametro
             .Include(x => x.ParametroEnsayo)
             .Include(x => x.EnsayoRealizado)
+                .ThenInclude(e => e!.TipoEnsayo)
             .Where(x => x.EnsayoRealizadoId == ensayoId)
             .OrderBy(x => x.ParametroEnsayo!.Nombre)
             .ToListAsync();
@@ -64,7 +66,7 @@ public class ResultadosController : ControllerBase
             return NotFound("El ensayo realizado no existe.");
 
         var parametros = await db.ParametrosEnsayo
-            .Where(x => x.TipoEnsayoId == ensayo.TipoEnsayoId)
+            .Where(x => x.TipoEnsayoId == ensayo.TipoEnsayoId && !x.EsCalculado)
             .OrderBy(x => x.Nombre)
             .ToListAsync();
 

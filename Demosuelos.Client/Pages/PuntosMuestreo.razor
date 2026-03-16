@@ -38,6 +38,11 @@
     </div>
 
     <div class="mb-3">
+        <label class="form-label">Sector</label>
+        <InputText class="form-control" @bind-Value="modelo.Sector" />
+    </div>
+
+    <div class="mb-3">
         <label class="form-label">Descripción</label>
         <InputText class="form-control" @bind-Value="modelo.Descripcion" />
     </div>
@@ -81,6 +86,7 @@ else
                 <th>Id</th>
                 <th>Proyecto</th>
                 <th>Código</th>
+                <th>Sector</th>
                 <th>Descripción</th>
                 <th>X</th>
                 <th>Y</th>
@@ -94,6 +100,7 @@ else
                     <td>@punto.Id</td>
                     <td>@(punto.Proyecto?.Nombre ?? "")</td>
                     <td>@punto.Codigo</td>
+                    <td>@punto.Sector</td>
                     <td>@punto.Descripcion</td>
                     <td>@punto.CoordenadaX</td>
                     <td>@punto.CoordenadaY</td>
@@ -221,6 +228,7 @@ else
             Id = punto.Id,
             ProyectoId = punto.ProyectoId,
             Codigo = punto.Codigo,
+            Sector = punto.Sector,
             Descripcion = punto.Descripcion,
             CoordenadaX = punto.CoordenadaX,
             CoordenadaY = punto.CoordenadaY

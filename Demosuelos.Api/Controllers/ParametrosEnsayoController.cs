@@ -50,6 +50,12 @@ public class ParametrosEnsayoController : ControllerBase
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
 
+        parametro.Nombre = parametro.Nombre?.Trim() ?? string.Empty;
+        parametro.Unidad = string.IsNullOrWhiteSpace(parametro.Unidad) ? null : parametro.Unidad.Trim();
+
+        if (string.IsNullOrWhiteSpace(parametro.Nombre))
+            return BadRequest("Debes ingresar el nombre del parámetro.");
+
         var tipoExiste = await db.TiposEnsayo.AnyAsync(x => x.Id == parametro.TipoEnsayoId);
         if (!tipoExiste)
             return BadRequest("El tipo de ensayo seleccionado no existe.");
@@ -88,6 +94,12 @@ public class ParametrosEnsayoController : ControllerBase
         if (existente is null)
             return NotFound("Parámetro de ensayo no encontrado.");
 
+        parametro.Nombre = parametro.Nombre?.Trim() ?? string.Empty;
+        parametro.Unidad = string.IsNullOrWhiteSpace(parametro.Unidad) ? null : parametro.Unidad.Trim();
+
+        if (string.IsNullOrWhiteSpace(parametro.Nombre))
+            return BadRequest("Debes ingresar el nombre del parámetro.");
+
         var tipoExiste = await db.TiposEnsayo.AnyAsync(x => x.Id == parametro.TipoEnsayoId);
         if (!tipoExiste)
             return BadRequest("El tipo de ensayo seleccionado no existe.");
@@ -110,6 +122,7 @@ public class ParametrosEnsayoController : ControllerBase
         existente.Nombre = parametro.Nombre;
         existente.Unidad = parametro.Unidad;
         existente.Requerido = parametro.Requerido;
+        existente.EsCalculado = parametro.EsCalculado;
         existente.MinReferencial = parametro.MinReferencial;
         existente.MaxReferencial = parametro.MaxReferencial;
 

@@ -23,7 +23,11 @@
 
     <div class="mb-3">
         <label class="form-label">Ensayo Realizado</label>
-        <InputSelect class="form-select" @bind-Value="ensayoSeleccionadoId">
+        <InputSelect class="form-select"
+                     Value="ensayoSeleccionadoId"
+                     ValueChanged="OnEnsayoSeleccionadoChanged"
+                     ValueExpression="() => ensayoSeleccionadoId"
+                     disabled="@modoEdicion">
             <option value="0">Seleccione un ensayo</option>
             @foreach (var ensayo in ensayos)
             {
@@ -32,17 +36,41 @@
                 </option>
             }
         </InputSelect>
+
+        @if (modoEdicion)
+        {
+            <div class="form-text">
+                En edición no se puede cambiar el ensayo asociado al resultado.
+            </div>
+        }
     </div>
 
     <div class="mb-3">
         <label class="form-label">Parámetro</label>
-        <InputSelect class="form-select" @bind-Value="modelo.ParametroEnsayoId">
+        <InputSelect class="form-select"
+                     @bind-Value="modelo.ParametroEnsayoId"
+                     disabled="@(modoEdicion || ensayoSeleccionadoId == 0 || parametrosDisponibles.Count == 0)">
             <option value="0">Seleccione un parámetro</option>
             @foreach (var parametro in parametrosDisponibles)
             {
-                <option value="@parametro.Id">@parametro.Nombre</option>
+                <option value="@parametro.Id">
+                    @($"{parametro.Nombre}{(string.IsNullOrWhiteSpace(parametro.Unidad) ? "" : $" ({parametro.Unidad})")}")
+                </option>
             }
         </InputSelect>
+
+        @if (modoEdicion)
+        {
+            <div class="form-text">
+                En edición no se puede cambiar el parámetro asociado al resultado.
+            </div>
+        }
+        else if (ensayoSeleccionadoId > 0 && parametrosDisponibles.Count == 0)
+        {
+            <div class="form-text">
+                No hay parámetros manuales disponibles para este ensayo.
+            </div>
+        }
     </div>
 
     <div class="mb-3">
@@ -96,7 +124,7 @@ else
             {
                 <tr>
                     <td>@resultado.Id</td>
-                    <td>@(BuscarTextoEnsayo(resultado.EnsayoRealizadoId))</td>
+                    <td>@BuscarTextoEnsayo(resultado.EnsayoRealizadoId)</td>
                     <td>@(resultado.EnsayoRealizado?.Muestra?.CodigoMuestra ?? "")</td>
                     <td>@(resultado.ParametroEnsayo?.Nombre ?? "")</td>
                     <td>@resultado.Valor</td>
@@ -139,25 +167,22 @@ else
     private string mensajeError = string.Empty;
     private string mensajeOk = string.Empty;
 
-    private int _ensayoSeleccionadoId;
-    private int ensayoSeleccionadoId
-    {
-        get => _ensayoSeleccionadoId;
-        set
-        {
-            if (_ensayoSeleccionadoId != value)
-            {
-                _ensayoSeleccionadoId = value;
-                modelo.EnsayoRealizadoId = value;
-                _ = CargarParametrosDisponibles(value);
-            }
-        }
-    }
+    private int ensayoSeleccionadoId = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await CargarEnsayos();
         await CargarResultados();
+    }
+
+    private async Task OnEnsayoSeleccionadoChanged(int value)
+    {
+        if (modoEdicion)
+            return;
+
+        ensayoSeleccionadoId = value;
+        modelo.EnsayoRealizadoId = value;
+        await CargarParametrosDisponibles(value);
     }
 
     private async Task CargarEnsayos()
@@ -201,7 +226,6 @@ else
         {
             parametrosDisponibles = new();
             modelo.ParametroEnsayoId = 0;
-            await InvokeAsync(StateHasChanged);
             return;
         }
 
@@ -210,7 +234,7 @@ else
             parametrosDisponibles = await Http.GetFromJsonAsync<List<ParametroEnsayo>>(
                 $"api/resultados/parametros-disponibles/{ensayoId}") ?? new();
 
-            if (!parametrosDisponibles.Any(x => x.Id == modelo.ParametroEnsayoId))
+            if (!modoEdicion && !parametrosDisponibles.Any(x => x.Id == modelo.ParametroEnsayoId))
             {
                 modelo.ParametroEnsayoId = 0;
             }
@@ -218,11 +242,14 @@ else
         catch (Exception ex)
         {
             parametrosDisponibles = new();
-            modelo.ParametroEnsayoId = 0;
+
+            if (!modoEdicion)
+            {
+                modelo.ParametroEnsayoId = 0;
+            }
+
             mensajeError = $"Error al cargar parámetros disponibles: {ex.Message}";
         }
-
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task GuardarResultado()
@@ -233,6 +260,18 @@ else
 
         try
         {
+            if (modelo.EnsayoRealizadoId <= 0)
+            {
+                mensajeError = "Debes seleccionar un ensayo realizado.";
+                return;
+            }
+
+            if (modelo.ParametroEnsayoId <= 0)
+            {
+                mensajeError = "Debes seleccionar un parámetro.";
+                return;
+            }
+
             HttpResponseMessage response;
 
             if (modoEdicion)

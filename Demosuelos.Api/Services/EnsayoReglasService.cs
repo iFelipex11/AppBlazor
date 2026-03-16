@@ -138,7 +138,7 @@ public class EnsayoReglasService
 
         var mensajes = new List<MensajeValidacion>();
 
-        foreach (var parametro in parametros.Where(p => p.Requerido))
+        foreach (var parametro in parametros.Where(p => p.Requerido && !p.EsCalculado))
         {
             var existe = resultados.Any(r => r.ParametroEnsayoId == parametro.Id);
             if (!existe)
@@ -165,19 +165,21 @@ public class EnsayoReglasService
 
         var resumen = await ObtenerResumenMuestraInternoAsync(db, ensayo.MuestraId);
 
-        if (resumen.LimiteLiquido.HasValue && resumen.LimitePlastico.HasValue)
+        if (resumen is not null &&
+            resumen.LimiteLiquido.HasValue &&
+            resumen.LimitePlastico.HasValue &&
+            resumen.LimitePlastico > resumen.LimiteLiquido)
         {
-            if (resumen.LimitePlastico > resumen.LimiteLiquido)
+            mensajes.Add(new MensajeValidacion
             {
-                mensajes.Add(new MensajeValidacion
-                {
-                    Tipo = "Error",
-                    Texto = "Inconsistencia técnica: LP es mayor que LL."
-                });
-            }
+                Tipo = "Error",
+                Texto = "Inconsistencia técnica: LP es mayor que LL."
+            });
         }
 
-        if (resumen.IndicePlasticidad.HasValue && resumen.IndicePlasticidad < 0)
+        if (resumen is not null &&
+            resumen.IndicePlasticidad.HasValue &&
+            resumen.IndicePlasticidad < 0)
         {
             mensajes.Add(new MensajeValidacion
             {
@@ -205,6 +207,12 @@ public class EnsayoReglasService
         }
 
         ensayo.Estado = estadoEnsayo;
+
+        if (estadoEnsayo == "Incompleto")
+            ensayo.FechaValidacion = null;
+        else
+            ensayo.FechaValidacion = DateTime.Today;
+
         if (ensayo.Muestra is not null)
         {
             ensayo.Muestra.EstadoMuestra = estadoMuestra;

@@ -50,6 +50,15 @@ public class PuntosMuestreoController : ControllerBase
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
 
+        punto.Codigo = punto.Codigo?.Trim() ?? string.Empty;
+        punto.Sector = string.IsNullOrWhiteSpace(punto.Sector) ? null : punto.Sector.Trim();
+        punto.Descripcion = string.IsNullOrWhiteSpace(punto.Descripcion) ? null : punto.Descripcion.Trim();
+        punto.CoordenadaX = string.IsNullOrWhiteSpace(punto.CoordenadaX) ? null : punto.CoordenadaX.Trim();
+        punto.CoordenadaY = string.IsNullOrWhiteSpace(punto.CoordenadaY) ? null : punto.CoordenadaY.Trim();
+
+        if (string.IsNullOrWhiteSpace(punto.Codigo))
+            return BadRequest("Debes ingresar el código del punto de muestreo.");
+
         var proyectoExiste = await db.Proyectos.AnyAsync(x => x.Id == punto.ProyectoId);
         if (!proyectoExiste)
             return BadRequest("El proyecto seleccionado no existe.");
@@ -82,6 +91,15 @@ public class PuntosMuestreoController : ControllerBase
         if (existente is null)
             return NotFound("Punto de muestreo no encontrado.");
 
+        punto.Codigo = punto.Codigo?.Trim() ?? string.Empty;
+        punto.Sector = string.IsNullOrWhiteSpace(punto.Sector) ? null : punto.Sector.Trim();
+        punto.Descripcion = string.IsNullOrWhiteSpace(punto.Descripcion) ? null : punto.Descripcion.Trim();
+        punto.CoordenadaX = string.IsNullOrWhiteSpace(punto.CoordenadaX) ? null : punto.CoordenadaX.Trim();
+        punto.CoordenadaY = string.IsNullOrWhiteSpace(punto.CoordenadaY) ? null : punto.CoordenadaY.Trim();
+
+        if (string.IsNullOrWhiteSpace(punto.Codigo))
+            return BadRequest("Debes ingresar el código del punto de muestreo.");
+
         var proyectoExiste = await db.Proyectos.AnyAsync(x => x.Id == punto.ProyectoId);
         if (!proyectoExiste)
             return BadRequest("El proyecto seleccionado no existe.");
@@ -96,6 +114,7 @@ public class PuntosMuestreoController : ControllerBase
 
         existente.ProyectoId = punto.ProyectoId;
         existente.Codigo = punto.Codigo;
+        existente.Sector = punto.Sector;
         existente.Descripcion = punto.Descripcion;
         existente.CoordenadaX = punto.CoordenadaX;
         existente.CoordenadaY = punto.CoordenadaY;

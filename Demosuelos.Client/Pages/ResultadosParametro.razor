@@ -23,11 +23,7 @@
 
     <div class="mb-3">
         <label class="form-label">Ensayo Realizado</label>
-        <InputSelect class="form-select"
-                     Value="ensayoSeleccionadoId"
-                     ValueChanged="OnEnsayoSeleccionadoChanged"
-                     ValueExpression="() => ensayoSeleccionadoId"
-                     disabled="@modoEdicion">
+        <select class="form-select" value="@ensayoSeleccionadoId" @onchange="OnEnsayoSeleccionadoChanged" disabled="@modoEdicion">
             <option value="0">Seleccione un ensayo</option>
             @foreach (var ensayo in ensayos)
             {
@@ -35,7 +31,7 @@
                     @($"{ensayo.Id} - {ensayo.Muestra?.CodigoMuestra} - {ensayo.TipoEnsayo?.Codigo}")
                 </option>
             }
-        </InputSelect>
+        </select>
 
         @if (modoEdicion)
         {
@@ -137,13 +133,13 @@ else
                     <td>
                         <button type="button"
                                 class="btn btn-sm btn-warning me-2"
-                                @onclick="() => EditarResultado(resultado)">
+                                @onclick="async () => await EditarResultado(resultado)">
                             Editar
                         </button>
 
                         <button type="button"
                                 class="btn btn-sm btn-danger"
-                                @onclick="() => EliminarResultado(resultado.Id)">
+                                @onclick="async () => await EliminarResultado(resultado.Id)">
                             Eliminar
                         </button>
                     </td>
@@ -175,10 +171,13 @@ else
         await CargarResultados();
     }
 
-    private async Task OnEnsayoSeleccionadoChanged(int value)
+    private async Task OnEnsayoSeleccionadoChanged(ChangeEventArgs e)
     {
         if (modoEdicion)
             return;
+
+        if (!int.TryParse(e.Value?.ToString(), out var value))
+            value = 0;
 
         ensayoSeleccionadoId = value;
         modelo.EnsayoRealizadoId = value;

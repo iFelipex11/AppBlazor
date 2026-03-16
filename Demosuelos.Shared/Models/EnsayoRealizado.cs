@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Demosuelos.Models;
 
@@ -12,7 +13,11 @@ public class EnsayoRealizado
     [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un tipo de ensayo.")]
     public int TipoEnsayoId { get; set; }
 
-    public DateTime FechaEnsayo { get; set; } = DateTime.Now;
+    public DateTime FechaAsignacion { get; set; } = DateTime.Today;
+
+    public DateTime FechaEjecucion { get; set; } = DateTime.Today;
+
+    public DateTime? FechaValidacion { get; set; }
 
     [MaxLength(100)]
     public string? Responsable { get; set; }
@@ -23,4 +28,11 @@ public class EnsayoRealizado
 
     public Muestra? Muestra { get; set; }
     public TipoEnsayo? TipoEnsayo { get; set; }
+
+    [NotMapped]
+    public DateTime FechaEnsayo
+    {
+        get => FechaEjecucion;
+        set => FechaEjecucion = value;
+    }
 }

@@ -32,6 +32,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PuntoMuestreo>(entity =>
         {
             entity.Property(x => x.Codigo).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Sector).HasMaxLength(100);
             entity.Property(x => x.Descripcion).HasMaxLength(200);
             entity.Property(x => x.CoordenadaX).HasMaxLength(100);
             entity.Property(x => x.CoordenadaY).HasMaxLength(100);
@@ -47,6 +48,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Muestra>(entity =>
         {
             entity.Property(x => x.CodigoMuestra).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.FechaRecepcion)
+                .HasColumnType("date")
+                .HasDefaultValueSql("CAST(GETDATE() AS date)");
+            entity.Property(x => x.FechaMuestreo)
+                .HasColumnType("date")
+                .HasDefaultValueSql("CAST(GETDATE() AS date)");
+            entity.Property(x => x.ProfundidadInicial).HasPrecision(18, 2);
+            entity.Property(x => x.ProfundidadFinal).HasPrecision(18, 2);
             entity.Property(x => x.TipoMuestra).HasMaxLength(50);
             entity.Property(x => x.EstadoMuestra).HasMaxLength(50).IsRequired();
             entity.Property(x => x.Observaciones).HasMaxLength(300);
@@ -72,6 +81,7 @@ public class AppDbContext : DbContext
         {
             entity.Property(x => x.Nombre).HasMaxLength(100).IsRequired();
             entity.Property(x => x.Unidad).HasMaxLength(50);
+            entity.Property(x => x.EsCalculado).HasDefaultValue(false);
             entity.Property(x => x.MinReferencial).HasPrecision(18, 4);
             entity.Property(x => x.MaxReferencial).HasPrecision(18, 4);
 
@@ -85,6 +95,14 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<EnsayoRealizado>(entity =>
         {
+            entity.Property(x => x.FechaAsignacion)
+                .HasColumnType("date")
+                .HasDefaultValueSql("CAST(GETDATE() AS date)");
+            entity.Property(x => x.FechaEjecucion)
+                .HasColumnType("date")
+                .HasDefaultValueSql("CAST(GETDATE() AS date)");
+            entity.Property(x => x.FechaValidacion)
+                .HasColumnType("date");
             entity.Property(x => x.Responsable).HasMaxLength(100);
             entity.Property(x => x.Estado).HasMaxLength(50).IsRequired();
 
@@ -120,4 +138,4 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
-}
+}   

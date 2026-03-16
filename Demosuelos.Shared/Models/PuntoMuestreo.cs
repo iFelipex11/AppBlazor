@@ -13,6 +13,9 @@ public class PuntoMuestreo
     [MaxLength(50)]
     public string Codigo { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string? Sector { get; set; }
+
     [MaxLength(200)]
     public string? Descripcion { get; set; }
 

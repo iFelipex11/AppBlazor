@@ -13,7 +13,13 @@ public class Muestra
     [MaxLength(50)]
     public string CodigoMuestra { get; set; } = string.Empty;
 
-    public DateTime FechaRecepcion { get; set; } = DateTime.Now;
+    public DateTime FechaRecepcion { get; set; } = DateTime.Today;
+
+    public DateTime FechaMuestreo { get; set; } = DateTime.Today;
+
+    public decimal? ProfundidadInicial { get; set; }
+
+    public decimal? ProfundidadFinal { get; set; }
 
     [MaxLength(50)]
     public string? TipoMuestra { get; set; }

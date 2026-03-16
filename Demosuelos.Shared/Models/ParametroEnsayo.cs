@@ -18,6 +18,8 @@ public class ParametroEnsayo
 
     public bool Requerido { get; set; } = true;
 
+    public bool EsCalculado { get; set; } = false;
+
     public decimal? MinReferencial { get; set; }
 
     public decimal? MaxReferencial { get; set; }

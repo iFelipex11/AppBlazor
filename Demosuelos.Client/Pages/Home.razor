@@ -8,67 +8,269 @@
 
 <PageTitle>Inicio</PageTitle>
 
-<div class="container-fluid">
-    <div class="mb-4">
-        <h3>Laboratorio de Suelos</h3>
-        <p class="text-muted">Vista general de puntos de muestreo en mapa.</p>
-    </div>
+@if (!string.IsNullOrWhiteSpace(mensajeError))
+{
+    <div class="alert alert-danger mb-4">@mensajeError</div>
+}
 
-    <div class="row g-3">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h4>Puntos de muestreo</h4>
-                    <p class="text-muted">Selecciona un punto para hacer zoom en el mapa.</p>
+<div class="dashboard-shell">
+    <section class="hero-strip">
+        <div class="hero-copy">
+            <p class="hero-kicker">Panel principal</p>
+            <h2>Control técnico del laboratorio</h2>
+            <p>
+                Visualiza trazabilidad, ensayos, resultados y puntos de muestreo
+                desde una sola vista operativa.
+            </p>
+        </div>
 
-                    @if (!string.IsNullOrWhiteSpace(mensaje))
-                    {
-                        <div class="alert alert-warning">@mensaje</div>
-                    }
+        <div class="hero-actions">
+            <button class="btn btn-primary" @onclick="RecargarDashboard" disabled="@cargandoDashboard">
+                @(cargandoDashboard ? "Actualizando..." : "Actualizar panel")
+            </button>
+            <a class="btn btn-dark" href="resumen-muestra">Ver resumen técnico</a>
+        </div>
+    </section>
 
-                    @if (estudios.Count == 0)
-                    {
-                        <p>No hay puntos con coordenadas válidas.</p>
-                    }
-                    else
-                    {
-                        <div class="list-group">
-                            @foreach (var estudio in estudios)
+    <section class="metrics-grid">
+        <article class="metric-card metric-blue">
+            <div class="metric-icon">
+                <span class="bi bi-box-seam-fill"></span>
+            </div>
+            <div>
+                <div class="metric-value">@totalMuestras</div>
+                <div class="metric-label">Muestras registradas</div>
+            </div>
+        </article>
+
+        <article class="metric-card metric-orange">
+            <div class="metric-icon">
+                <span class="bi bi-clipboard2-pulse-fill"></span>
+            </div>
+            <div>
+                <div class="metric-value">@totalEnsayos</div>
+                <div class="metric-label">Ensayos realizados</div>
+            </div>
+        </article>
+
+        <article class="metric-card metric-green">
+            <div class="metric-icon">
+                <span class="bi bi-check2-circle"></span>
+            </div>
+            <div>
+                <div class="metric-value">@resultadosValidos</div>
+                <div class="metric-label">Resultados válidos</div>
+            </div>
+        </article>
+
+        <article class="metric-card metric-purple">
+            <div class="metric-icon">
+                <span class="bi bi-exclamation-circle"></span>
+            </div>
+            <div>
+                <div class="metric-value">@resultadosCriticos</div>
+                <div class="metric-label">Resultados críticos</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-main-grid">
+        <div class="dashboard-panel dashboard-panel-large">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Operación</p>
+                    <h3>Muestras recientes</h3>
+                </div>
+
+                <div class="panel-actions">
+                    <input class="sample-search"
+                           placeholder="Buscar muestra..."
+                           @bind="filtroMuestra"
+                           @bind:event="oninput" />
+                    <a class="btn btn-primary btn-sm-action" href="muestras">Nueva muestra</a>
+                </div>
+            </div>
+
+            @if (cargandoDashboard)
+            {
+                <p>Cargando información...</p>
+            }
+            else if (MuestrasFiltradas.Count == 0)
+            {
+                <p>No hay muestras para mostrar.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Proyecto</th>
+                                <th>Punto</th>
+                                <th>Fecha Muestreo</th>
+                                <th>Prof. Inicial</th>
+                                <th>Prof. Final</th>
+                                <th>Estado</th>
+                                <th style="width:220px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var muestra in MuestrasFiltradas)
                             {
-                                <button type="button"
-                                        class="list-group-item list-group-item-action @(estudio.Id == estudioSeleccionadoId ? "active" : "")"
-                                        @onclick="() => IrAEstudio(estudio)">
-                                    <strong>@estudio.Nombre</strong><br />
-                                    <small>@estudio.Descripcion</small><br />
-                                    <small>Lat: @estudio.Lat - Lng: @estudio.Lng</small>
-                                </button>
+                                <tr>
+                                    <td><strong>@muestra.CodigoMuestra</strong></td>
+                                    <td>@(muestra.PuntoMuestreo?.Proyecto?.Nombre ?? "N/A")</td>
+                                    <td>
+                                        @(muestra.PuntoMuestreo?.Codigo ?? "N/A")
+                                        @if (!string.IsNullOrWhiteSpace(muestra.PuntoMuestreo?.Sector))
+                                        {
+                                            <div class="table-mini-text">@muestra.PuntoMuestreo?.Sector</div>
+                                        }
+                                    </td>
+                                    <td>@muestra.FechaMuestreo.ToString("yyyy-MM-dd")</td>
+                                    <td>@(muestra.ProfundidadInicial?.ToString("0.##") ?? "-")</td>
+                                    <td>@(muestra.ProfundidadFinal?.ToString("0.##") ?? "-")</td>
+                                    <td>
+                                        <span class="@ObtenerClaseEstado(muestra.EstadoMuestra)">
+                                            @muestra.EstadoMuestra
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a class="btn btn-sm btn-primary" href="resumen-muestra">Ver resumen</a>
+                                            <a class="btn btn-sm btn-warning" href="muestras">Editar</a>
+                                        </div>
+                                    </td>
+                                </tr>
                             }
-                        </div>
-                    }
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+            }
         </div>
 
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    <h4>Mapa de puntos</h4>
-                    <div id="mapa-estudios" style="height: 560px; width: 100%; border-radius: 8px;"></div>
+        <div class="dashboard-panel map-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Mapa</p>
+                    <h3>Puntos de muestreo</h3>
                 </div>
             </div>
+
+            @if (!string.IsNullOrWhiteSpace(mensajeMapa))
+            {
+                <div class="alert alert-warning">@mensajeMapa</div>
+            }
+
+            <div id="mapa-estudios" class="map-surface"></div>
         </div>
-    </div>
+    </section>
+
+    <section class="dashboard-support-grid">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Ubicaciones</p>
+                    <h3>Puntos registrados</h3>
+                </div>
+                <a class="btn btn-primary btn-sm-action" href="puntos-muestreo">Gestionar</a>
+            </div>
+
+            @if (estudios.Count == 0)
+            {
+                <p>No hay puntos con coordenadas válidas.</p>
+            }
+            else
+            {
+                <div class="map-point-list scroll-point-list">
+                    @foreach (var estudio in estudios)
+                    {
+                        <button type="button"
+                                class="map-point-item @(estudio.Id == estudioSeleccionadoId ? "selected" : "")"
+                                @onclick="() => IrAEstudio(estudio)">
+                            <div>
+                                <strong>@estudio.Nombre</strong>
+                                <div>@estudio.Descripcion</div>
+                            </div>
+                            <span class="bi bi-arrow-up-right-circle"></span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="panel-kicker">Accesos rápidos</p>
+                    <h3>Flujo de trabajo</h3>
+                </div>
+            </div>
+
+            <div class="workflow-grid">
+                <a href="proyectos" class="quick-action-card compact-action-card">
+                    <span class="bi bi-folder2-open"></span>
+                    <strong>Proyectos</strong>
+                    <small>Administra proyectos activos</small>
+                </a>
+
+                <a href="puntos-muestreo" class="quick-action-card compact-action-card">
+                    <span class="bi bi-geo-alt-fill"></span>
+                    <strong>Puntos</strong>
+                    <small>Ubicaciones y coordenadas</small>
+                </a>
+
+                <a href="ensayos-realizados" class="quick-action-card compact-action-card">
+                    <span class="bi bi-clipboard2-pulse-fill"></span>
+                    <strong>Ensayos</strong>
+                    <small>Ejecución y estados</small>
+                </a>
+
+                <a href="resultados-parametro" class="quick-action-card compact-action-card">
+                    <span class="bi bi-calculator-fill"></span>
+                    <strong>Resultados</strong>
+                    <small>Captura y validación</small>
+                </a>
+            </div>
+        </div>
+    </section>
 </div>
 
 @code {
     private int estudioSeleccionadoId;
-    private string? mensaje;
-    private List<EstudioMapa> estudios = new();
+    private string? mensajeMapa;
+    private string? mensajeError;
     private bool mapaInicializado;
+    private bool cargandoDashboard;
+
+    private string filtroMuestra = string.Empty;
+
+    private List<EstudioMapa> estudios = new();
+    private List<Muestra> muestras = new();
+    private List<EnsayoRealizado> ensayos = new();
+    private List<ResultadoParametro> resultados = new();
+
+    private int totalMuestras;
+    private int totalEnsayos;
+    private int resultadosValidos;
+    private int resultadosCriticos;
+
+    private List<Muestra> MuestrasFiltradas =>
+        muestras
+            .Where(m =>
+                string.IsNullOrWhiteSpace(filtroMuestra) ||
+                (m.CodigoMuestra?.Contains(filtroMuestra, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (m.PuntoMuestreo?.Codigo?.Contains(filtroMuestra, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (m.PuntoMuestreo?.Proyecto?.Nombre?.Contains(filtroMuestra, StringComparison.OrdinalIgnoreCase) ?? false))
+            .OrderByDescending(m => m.FechaMuestreo)
+            .ThenByDescending(m => m.FechaRecepcion)
+            .Take(8)
+            .ToList();
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarEstudios();
+        await CargarDashboard();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -91,48 +293,105 @@
         mapaInicializado = true;
     }
 
-    private async Task CargarEstudios()
+    private async Task RecargarDashboard()
     {
+        mapaInicializado = false;
+
         try
         {
-            var puntos = await Http.GetFromJsonAsync<List<PuntoMuestreo>>("api/puntosmuestreo") ?? new();
+            await JS.InvokeVoidAsync("homeMap.destroyMap");
+        }
+        catch
+        {
+        }
 
-            estudios = new List<EstudioMapa>();
+        await CargarDashboard();
+        StateHasChanged();
+    }
 
-            foreach (var punto in puntos)
-            {
-                if (string.IsNullOrWhiteSpace(punto.CoordenadaX) || string.IsNullOrWhiteSpace(punto.CoordenadaY))
-                    continue;
+    private async Task CargarDashboard()
+    {
+        cargandoDashboard = true;
+        mensajeError = null;
+        mensajeMapa = null;
 
-                var lngOk = TryParseCoordinate(punto.CoordenadaX, out var lat);
-                var latOk = TryParseCoordinate(punto.CoordenadaY, out var lng);
+        try
+        {
+            var puntosTask = Http.GetFromJsonAsync<List<PuntoMuestreo>>("api/puntosmuestreo");
+            var muestrasTask = Http.GetFromJsonAsync<List<Muestra>>("api/muestras");
+            var ensayosTask = Http.GetFromJsonAsync<List<EnsayoRealizado>>("api/ensayos");
+            var resultadosTask = Http.GetFromJsonAsync<List<ResultadoParametro>>("api/resultados");
 
-                if (!latOk || !lngOk)
-                    continue;
+            await Task.WhenAll(puntosTask!, muestrasTask!, ensayosTask!, resultadosTask!);
 
-                if (lat is < -90 or > 90)
-                    continue;
+            var puntos = puntosTask.Result ?? new();
+            muestras = muestrasTask.Result ?? new();
+            ensayos = ensayosTask.Result ?? new();
+            resultados = resultadosTask.Result ?? new();
 
-                if (lng is < -180 or > 180)
-                    continue;
+            totalMuestras = muestras.Count;
+            totalEnsayos = ensayos.Count;
+            resultadosValidos = resultados.Count(x => x.CumpleRango == true);
+            resultadosCriticos = resultados.Count(x => x.CumpleRango == false);
 
-                estudios.Add(new EstudioMapa(
-                    punto.Id,
-                    punto.Codigo,
-                    $"{punto.Proyecto?.Nombre ?? "Sin proyecto"} - {punto.Descripcion ?? "Sin descripción"}",
-                    lat,
-                    lng));
-            }
-
-            if (estudios.Count == 0)
-            {
-                mensaje = "No encontré puntos de muestreo con coordenadas válidas en la base de datos.";
-            }
+            ConstruirEstudiosMapa(puntos);
         }
         catch (Exception ex)
         {
-            mensaje = $"Error al cargar puntos para el mapa: {ex.Message}";
+            mensajeError = $"Error al cargar el dashboard: {ex.Message}";
             estudios = new();
+            muestras = new();
+            ensayos = new();
+            resultados = new();
+            totalMuestras = 0;
+            totalEnsayos = 0;
+            resultadosValidos = 0;
+            resultadosCriticos = 0;
+        }
+        finally
+        {
+            cargandoDashboard = false;
+        }
+    }
+
+    private void ConstruirEstudiosMapa(List<PuntoMuestreo> puntos)
+    {
+        estudios = new();
+
+        foreach (var punto in puntos)
+        {
+            if (string.IsNullOrWhiteSpace(punto.CoordenadaX) || string.IsNullOrWhiteSpace(punto.CoordenadaY))
+                continue;
+
+            var xOk = TryParseCoordinate(punto.CoordenadaX, out var lat);
+            var yOk = TryParseCoordinate(punto.CoordenadaY, out var lng);
+
+            if (!xOk || !yOk)
+                continue;
+
+            if (lat is < -90 or > 90)
+                continue;
+
+            if (lng is < -180 or > 180)
+                continue;
+
+            var descripcion = $"{punto.Proyecto?.Nombre ?? "Sin proyecto"}";
+            if (!string.IsNullOrWhiteSpace(punto.Sector))
+                descripcion += $" · {punto.Sector}";
+            else if (!string.IsNullOrWhiteSpace(punto.Descripcion))
+                descripcion += $" · {punto.Descripcion}";
+
+            estudios.Add(new EstudioMapa(
+                punto.Id,
+                punto.Codigo,
+                descripcion,
+                lat,
+                lng));
+        }
+
+        if (estudios.Count == 0)
+        {
+            mensajeMapa = "No encontré puntos de muestreo con coordenadas válidas.";
         }
     }
 
@@ -161,6 +420,21 @@
             estudio.Id,
             estudio.Lat,
             estudio.Lng);
+    }
+
+    private string ObtenerClaseEstado(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+            return "status-chip status-neutral";
+
+        return estado.Trim().ToLowerInvariant() switch
+        {
+            "validada" => "status-chip status-success",
+            "observada" => "status-chip status-warning",
+            "con resultados parciales" => "status-chip status-info",
+            "registrada" => "status-chip status-neutral",
+            _ => "status-chip status-neutral"
+        };
     }
 
     public async ValueTask DisposeAsync()

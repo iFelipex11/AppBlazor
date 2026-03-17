@@ -1,74 +1,67 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Demosuelos</a>
+﻿<div class="sidebar-shell">
+    <div class="brand-block">
+        <div class="brand-logo">
+            <span class="bi bi-layers-half"></span>
+        </div>
+        <div>
+            <div class="brand-title">Demosuelos</div>
+            <div class="brand-subtitle">Lab Soil Demo</div>
+        </div>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <div class="nav-section-title">Navegación</div>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column nav-menu-custom">
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Home</span>
-            </NavLink>
-        </div>
+    <nav class="sidebar-nav">
+        <NavLink class="sidebar-link" href="" Match="NavLinkMatch.All">
+            <span class="bi bi-house-door-fill nav-icon"></span>
+            <span>Home</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="proyectos">
-                <span class="bi bi-folder nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Proyectos</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="proyectos">
+            <span class="bi bi-folder2-open nav-icon"></span>
+            <span>Proyectos</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="puntos-muestreo">
-                <span class="bi bi-geo-alt nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Puntos de Muestreo</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="puntos-muestreo">
+            <span class="bi bi-geo-alt-fill nav-icon"></span>
+            <span>Puntos de Muestreo</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="muestras">
-                <span class="bi bi-box-seam nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Muestras</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="muestras">
+            <span class="bi bi-box-seam-fill nav-icon"></span>
+            <span>Muestras</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="tipos-ensayo">
-                <span class="bi bi-list-check nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Tipos de Ensayo</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="tipos-ensayo">
+            <span class="bi bi-ui-checks-grid nav-icon"></span>
+            <span>Tipos de Ensayo</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="parametros-ensayo">
-                <span class="bi bi-sliders nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Parámetros de Ensayo</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="parametros-ensayo">
+            <span class="bi bi-sliders2-vertical nav-icon"></span>
+            <span>Parámetros de Ensayo</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="ensayos-realizados">
-                <span class="bi bi-clipboard-data nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Ensayos Realizados</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="ensayos-realizados">
+            <span class="bi bi-clipboard2-pulse-fill nav-icon"></span>
+            <span>Ensayos Realizados</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="resultados-parametro">
-                <span class="bi bi-calculator nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Resultados de Parámetro</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="resultados-parametro">
+            <span class="bi bi-calculator-fill nav-icon"></span>
+            <span>Resultados de Parámetro</span>
+        </NavLink>
 
-        <div class="nav-item px-2">
-            <NavLink class="nav-link" href="resumen-muestra">
-                <span class="bi bi-file-earmark-text nav-icon" aria-hidden="true"></span>
-                <span class="nav-text">Resumen de Muestra</span>
-            </NavLink>
-        </div>
+        <NavLink class="sidebar-link" href="resumen-muestra">
+            <span class="bi bi-file-earmark-bar-graph-fill nav-icon"></span>
+            <span>Resumen de Muestra</span>
+        </NavLink>
     </nav>
+
+    <div class="sidebar-footer">
+        <div class="version-chip">
+            <span class="bi bi-shield-check"></span>
+            <span>v1.0 Demo</span>
+        </div>
+    </div>
 </div>

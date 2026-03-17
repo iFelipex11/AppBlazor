@@ -1,16 +1,52 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
+@inject NavigationManager NavManager
+
+<div class="app-shell">
+    <aside class="app-sidebar">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <main class="app-main">
+        <header class="app-topbar minimalist-topbar">
+        </header>
 
-        <article class="content px-4">
-            @Body
-        </article>
+        <section class="page-wrapper">
+            <div class="page-header-card">
+                <div>
+                    <p class="page-kicker">Laboratorio de suelos</p>
+                    <h1 class="page-title">@GetPageTitle()</h1>
+                </div>
+
+                <div class="page-header-chip">
+                    <span class="bi bi-activity"></span>
+                    <span>Demo operativa</span>
+                </div>
+            </div>
+
+            <div class="page-content-card">
+                @Body
+            </div>
+        </section>
     </main>
 </div>
+
+@code {
+    private string GetPageTitle()
+    {
+        var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Trim('/').ToLowerInvariant();
+
+        return relative switch
+        {
+            "" => "Dashboard",
+            "proyectos" => "Gestión de Proyectos",
+            "puntos-muestreo" => "Puntos de Muestreo",
+            "muestras" => "Gestión de Muestras",
+            "tipos-ensayo" => "Tipos de Ensayo",
+            "parametros-ensayo" => "Parámetros de Ensayo",
+            "ensayos-realizados" => "Ensayos Realizados",
+            "resultados-parametro" => "Resultados de Parámetro",
+            "resumen-muestra" => "Resumen de Muestra",
+            _ => "Demosuelos"
+        };
+    }
+}

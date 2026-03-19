@@ -1,9 +1,11 @@
-﻿using Demosuelos.Models;
+﻿using Demosuelos.Api.Entities;
+using Demosuelos.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Demosuelos.Api.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<User>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -20,6 +22,17 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(x => x.Document).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.FirstName).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.LastName).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Address).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Photo).IsRequired(false);
+
+            entity.HasIndex(x => x.Document).IsUnique();
+        });
 
         modelBuilder.Entity<Proyecto>(entity =>
         {
@@ -138,4 +151,4 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
-}   
+}

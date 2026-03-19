@@ -18,8 +18,9 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddDbContextFactory<AppDbContext>(
+    options => options.UseSqlServer(connectionString),
+    ServiceLifetime.Scoped);
 
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {

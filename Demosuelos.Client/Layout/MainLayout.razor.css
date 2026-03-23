@@ -2,9 +2,9 @@
 :global(body) {
     margin: 0;
     padding: 0;
-    background: radial-gradient(circle at top left, rgba(123, 92, 255, 0.10), transparent 26%), radial-gradient(circle at bottom right, rgba(80, 205, 255, 0.08), transparent 20%), linear-gradient(180deg, #f5f7ff 0%, #eef1f8 100%);
+    background: radial-gradient(circle at top left, rgba(191, 119, 47, 0.10), transparent 22%), radial-gradient(circle at bottom right, rgba(33, 80, 70, 0.10), transparent 24%), linear-gradient(180deg, #f6f1e8 0%, #ebe3d6 100%);
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    color: #1f2440;
+    color: #1f2b25;
 }
 
 :global(*) {
@@ -19,12 +19,12 @@
 .app-sidebar {
     width: 305px;
     min-width: 305px;
-    background: radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 24%), radial-gradient(circle at bottom left, rgba(255,255,255,0.08), transparent 18%), linear-gradient(180deg, #18226d 0%, #341072 54%, #56006d 100%);
+    background: radial-gradient(circle at top left, rgba(255,255,255,0.12), transparent 24%), radial-gradient(circle at bottom left, rgba(255,255,255,0.08), transparent 18%), linear-gradient(180deg, #17352f 0%, #1f4b43 56%, #6c4b2a 100%);
     color: white;
     position: sticky;
     top: 0;
     height: 100vh;
-    box-shadow: 18px 0 40px rgba(25, 24, 66, 0.14);
+    box-shadow: 18px 0 40px rgba(33, 41, 37, 0.16);
     z-index: 10;
 }
 
@@ -39,7 +39,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 18px;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 .topbar-left {
@@ -160,6 +160,10 @@
     gap: 20px;
 }
 
+.page-wrapper-compact {
+    gap: 0;
+}
+
 .page-header-card {
     display: flex;
     align-items: center;
@@ -167,9 +171,9 @@
     gap: 18px;
     padding: 24px 28px;
     border-radius: 24px;
-    background: rgba(255,255,255,0.74);
-    border: 1px solid rgba(138, 146, 182, 0.16);
-    box-shadow: 0 16px 45px rgba(31, 36, 64, 0.08);
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(99, 111, 93, 0.12);
+    box-shadow: 0 16px 45px rgba(51, 58, 47, 0.08);
     backdrop-filter: blur(10px);
 }
 
@@ -179,14 +183,14 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #7b84b0;
+    color: #7c8269;
 }
 
 .page-title {
     margin: 0;
     font-size: 2rem;
     font-weight: 800;
-    color: #202744;
+    color: #24362e;
 }
 
 .page-header-chip {
@@ -195,8 +199,8 @@
     gap: 8px;
     padding: 11px 16px;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(126, 107, 255, 0.12), rgba(78, 200, 255, 0.14));
-    color: #4b4f95;
+    background: linear-gradient(135deg, rgba(210, 164, 94, 0.18), rgba(53, 108, 95, 0.15));
+    color: #406156;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -205,10 +209,22 @@
     padding: 26px;
     border-radius: 28px;
     background: rgba(255,255,255,0.74);
-    border: 1px solid rgba(138, 146, 182, 0.16);
-    box-shadow: 0 18px 52px rgba(31, 36, 64, 0.08);
+    border: 1px solid rgba(99, 111, 93, 0.12);
+    box-shadow: 0 18px 52px rgba(51, 58, 47, 0.08);
     backdrop-filter: blur(10px);
     overflow: auto;
+}
+
+.page-content-card-plain {
+    min-height: calc(100vh - 110px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible;
 }
 
 :global(.page-content-card h3) {
@@ -216,13 +232,13 @@
     margin-bottom: 1.15rem;
     font-size: 1.95rem;
     font-weight: 800;
-    color: #202744;
+    color: #24362e;
 }
 
 :global(.page-content-card h4) {
     font-size: 1.35rem;
     font-weight: 800;
-    color: #2b3360;
+    color: #355246;
     margin-top: 1.25rem;
 }
 
@@ -233,7 +249,7 @@
 
 :global(.page-content-card .form-label) {
     font-weight: 700;
-    color: #36406f;
+    color: #355246;
     margin-bottom: 0.5rem;
 }
 
@@ -242,9 +258,9 @@
 :global(.page-content-card textarea) {
     min-height: 52px;
     border-radius: 16px;
-    border: 1px solid #dbe1f2;
-    background: rgba(248, 250, 255, 0.95);
-    color: #273055;
+    border: 1px solid #d8d0c2;
+    background: rgba(253, 250, 244, 0.96);
+    color: #2f3f38;
     box-shadow: none;
 }
 
@@ -254,8 +270,8 @@
 
 :global(.page-content-card .form-control:focus),
 :global(.page-content-card .form-select:focus) {
-    border-color: #7d7cff;
-    box-shadow: 0 0 0 0.2rem rgba(125, 124, 255, 0.12);
+    border-color: #3f6e63;
+    box-shadow: 0 0 0 0.2rem rgba(63, 110, 99, 0.12);
 }
 
 :global(.page-content-card .btn) {
@@ -267,24 +283,24 @@
 }
 
 :global(.page-content-card .btn-primary) {
-    background: linear-gradient(135deg, #4f86ff 0%, #3e6ce0 100%);
+    background: linear-gradient(135deg, #2d6a5c 0%, #214f45 100%);
 }
 
 :global(.page-content-card .btn-secondary) {
-    background: #7f8797;
+    background: #8a7a63;
 }
 
 :global(.page-content-card .btn-warning) {
     color: #2e2a09;
-    background: linear-gradient(135deg, #ffcf5a 0%, #f4b129 100%);
+    background: linear-gradient(135deg, #efc66d 0%, #d9a145 100%);
 }
 
 :global(.page-content-card .btn-danger) {
-    background: linear-gradient(135deg, #ff6a78 0%, #f03f55 100%);
+    background: linear-gradient(135deg, #b35d55 0%, #93443d 100%);
 }
 
 :global(.page-content-card .btn-dark) {
-    background: linear-gradient(135deg, #5c50d6 0%, #3825a8 100%);
+    background: linear-gradient(135deg, #7b5a38 0%, #5f4428 100%);
 }
 
 :global(.page-content-card .table) {
@@ -296,21 +312,21 @@
 :global(.page-content-card .table thead th) {
     border: none;
     background: transparent;
-    color: #505985;
+    color: #6b715d;
     font-size: 0.95rem;
     font-weight: 800;
 }
 
 :global(.page-content-card .table tbody tr) {
-    background: rgba(247, 248, 255, 0.96);
-    box-shadow: 0 8px 18px rgba(33, 41, 79, 0.05);
+    background: rgba(252, 248, 241, 0.96);
+    box-shadow: 0 8px 18px rgba(57, 60, 46, 0.05);
 }
 
 :global(.page-content-card .table tbody td) {
     border-top: none;
     border-bottom: none;
     vertical-align: middle;
-    color: #222b4c;
+    color: #26352f;
     padding-top: 14px;
     padding-bottom: 14px;
 }
@@ -389,13 +405,10 @@
 
 
 .minimalist-topbar {
-    height: 10px;
-    margin-bottom: 12px;
+    min-height: 52px;
+    margin-bottom: 16px;
 }
 
     .minimalist-topbar::before {
-        content: "";
-        display: block;
-        width: 100%;
-        height: 10px;
+        display: none;
     }

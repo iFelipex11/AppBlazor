@@ -1,6 +1,22 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <div class="auth-guard-shell">
+                        <p class="auth-guard-kicker">Acceso requerido</p>
+                        <h2 class="auth-guard-title">Debes iniciar sesion para continuar</h2>
+                        <p class="auth-guard-copy">
+                            Inicia sesion para ver el dashboard, gestionar muestras y cambiar de usuario cuando lo necesites.
+                        </p>
+                        <div class="auth-guard-actions">
+                            <a href="login" class="btn btn-primary">Iniciar sesion</a>
+                            <a href="register" class="btn btn-outline-secondary">Registro</a>
+                        </div>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+</CascadingAuthenticationState>

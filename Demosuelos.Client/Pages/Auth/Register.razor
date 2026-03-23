@@ -1,0 +1,127 @@
+@page "/register"
+@using Demosuelos.Shared.DTOs
+@using Demosuelos.Shared.Enums
+@inject HttpClient Http
+@inject ILoginService LoginService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Registro</PageTitle>
+
+<div class="auth-page-shell">
+    <div class="auth-card auth-card-wide">
+        <div class="auth-card-header">
+            <p class="auth-kicker">Seguridad</p>
+            <h3>Registrar nuevo usuario</h3>
+            <p class="auth-subtitle">Creamos la cuenta y dejamos la sesion iniciada automaticamente.</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="userModel" OnValidSubmit="CreateUserAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Nombres</label>
+                        <InputText class="form-control" @bind-Value="userModel.FirstName" />
+                        <ValidationMessage For="@(() => userModel.FirstName)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Apellidos</label>
+                        <InputText class="form-control" @bind-Value="userModel.LastName" />
+                        <ValidationMessage For="@(() => userModel.LastName)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Documento</label>
+                        <InputText class="form-control" @bind-Value="userModel.Document" />
+                        <ValidationMessage For="@(() => userModel.Document)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Direccion</label>
+                        <InputText class="form-control" @bind-Value="userModel.Address" />
+                        <ValidationMessage For="@(() => userModel.Address)" />
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Correo</label>
+                        <InputText class="form-control" @bind-Value="userModel.Email" />
+                        <ValidationMessage For="@(() => userModel.Email)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contrasena</label>
+                        <InputText type="password" class="form-control" @bind-Value="userModel.Password" />
+                        <ValidationMessage For="@(() => userModel.Password)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Confirmacion de contrasena</label>
+                        <InputText type="password" class="form-control" @bind-Value="userModel.PasswordConfirm" />
+                        <ValidationMessage For="@(() => userModel.PasswordConfirm)" />
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit" disabled="@sending">
+                @(sending ? "Registrando..." : "Registrar")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly UserDTO userModel = new()
+    {
+        UserType = UserType.User
+    };
+
+    private string? errorMessage;
+    private bool sending;
+
+    private async Task CreateUserAsync()
+    {
+        errorMessage = null;
+        sending = true;
+
+        try
+        {
+            userModel.UserType = UserType.User;
+
+            var response = await Http.PostAsJsonAsync("api/accounts/createuser", userModel);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+                return;
+            }
+
+            var token = await response.Content.ReadFromJsonAsync<TokenDTO>();
+            if (token is null || string.IsNullOrWhiteSpace(token.Token))
+            {
+                errorMessage = "No fue posible obtener el token de acceso.";
+                return;
+            }
+
+            await LoginService.LoginAsync(token.Token);
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al registrar el usuario: {ex.Message}";
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+}

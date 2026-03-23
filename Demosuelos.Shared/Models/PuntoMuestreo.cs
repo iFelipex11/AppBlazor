@@ -2,7 +2,7 @@
 
 namespace Demosuelos.Models;
 
-public class PuntoMuestreo
+public class PuntoMuestreo : AuditableEntity
 {
     public int Id { get; set; }
 

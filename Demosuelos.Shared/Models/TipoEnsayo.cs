@@ -2,7 +2,7 @@
 
 namespace Demosuelos.Models;
 
-public class TipoEnsayo
+public class TipoEnsayo : AuditableEntity
 {
     public int Id { get; set; }
 

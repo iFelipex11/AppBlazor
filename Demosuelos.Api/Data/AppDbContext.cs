@@ -1,14 +1,23 @@
-﻿using Demosuelos.Api.Entities;
+using Demosuelos.Api.Entities;
 using Demosuelos.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Security.Claims;
 
 namespace Demosuelos.Api.Data;
 
 public class AppDbContext : IdentityDbContext<User>
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        IHttpContextAccessor httpContextAccessor) : base(options)
     {
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public DbSet<Proyecto> Proyectos => Set<Proyecto>();
@@ -29,8 +38,8 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.FirstName).HasMaxLength(50).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(50).IsRequired();
             entity.Property(x => x.Address).HasMaxLength(200).IsRequired();
-            entity.Property(x => x.Photo).IsRequired(false);
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => x.Document).IsUnique();
         });
 
@@ -40,6 +49,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.Cliente).HasMaxLength(150).IsRequired();
             entity.Property(x => x.Ubicacion).HasMaxLength(200);
             entity.Property(x => x.Estado).HasMaxLength(50).IsRequired();
+            ConfigureAuditable(entity);
         });
 
         modelBuilder.Entity<PuntoMuestreo>(entity =>
@@ -50,6 +60,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.CoordenadaX).HasMaxLength(100);
             entity.Property(x => x.CoordenadaY).HasMaxLength(100);
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => new { x.ProyectoId, x.Codigo }).IsUnique();
 
             entity.HasOne(x => x.Proyecto)
@@ -73,6 +84,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.EstadoMuestra).HasMaxLength(50).IsRequired();
             entity.Property(x => x.Observaciones).HasMaxLength(300);
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => x.CodigoMuestra).IsUnique();
 
             entity.HasOne(x => x.PuntoMuestreo)
@@ -87,6 +99,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.Nombre).HasMaxLength(100).IsRequired();
             entity.Property(x => x.Descripcion).HasMaxLength(300);
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => x.Codigo).IsUnique();
         });
 
@@ -98,6 +111,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.MinReferencial).HasPrecision(18, 4);
             entity.Property(x => x.MaxReferencial).HasPrecision(18, 4);
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => new { x.TipoEnsayoId, x.Nombre }).IsUnique();
 
             entity.HasOne(x => x.TipoEnsayo)
@@ -119,6 +133,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.Responsable).HasMaxLength(100);
             entity.Property(x => x.Estado).HasMaxLength(50).IsRequired();
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => new { x.MuestraId, x.TipoEnsayoId }).IsUnique();
 
             entity.HasOne(x => x.Muestra)
@@ -138,6 +153,7 @@ public class AppDbContext : IdentityDbContext<User>
             entity.Property(x => x.Observacion).HasMaxLength(300);
             entity.Property(x => x.ObservacionTecnica).HasMaxLength(300);
 
+            ConfigureAuditable(entity);
             entity.HasIndex(x => new { x.EnsayoRealizadoId, x.ParametroEnsayoId }).IsUnique();
 
             entity.HasOne(x => x.EnsayoRealizado)
@@ -150,5 +166,102 @@ public class AppDbContext : IdentityDbContext<User>
                 .HasForeignKey(x => x.ParametroEnsayoId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+    }
+
+    public override int SaveChanges()
+    {
+        ApplyAuditInformation();
+        return base.SaveChanges();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplyAuditInformation();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ApplyAuditInformation();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ApplyAuditInformation();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ApplyAuditInformation()
+    {
+        var now = DateTime.UtcNow;
+        var currentUser = GetCurrentUser();
+
+        foreach (var entry in ChangeTracker.Entries().Where(IsAuditableEntry))
+        {
+            if (entry.Entity is not IAuditableEntity auditable)
+            {
+                continue;
+            }
+
+            if (entry.State == EntityState.Added)
+            {
+                if (auditable.FechaCreacion == default)
+                {
+                    auditable.FechaCreacion = now;
+                }
+
+                auditable.CreadoPor ??= currentUser;
+                auditable.FechaActualizacion = null;
+                auditable.ActualizadoPor = null;
+                continue;
+            }
+
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Property(nameof(IAuditableEntity.FechaCreacion)).IsModified = false;
+                entry.Property(nameof(IAuditableEntity.CreadoPor)).IsModified = false;
+                auditable.FechaActualizacion = now;
+                auditable.ActualizadoPor = currentUser;
+            }
+        }
+    }
+
+    private static bool IsAuditableEntry(EntityEntry entry)
+    {
+        return entry.Entity is IAuditableEntity &&
+               (entry.State == EntityState.Added || entry.State == EntityState.Modified);
+    }
+
+    private string GetCurrentUser()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        var email = user?.FindFirstValue(ClaimTypes.Email);
+        var name = user?.Identity?.Name;
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            return email;
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            return name;
+        }
+
+        return "Sistema";
+    }
+
+    private static void ConfigureAuditable<TEntity>(EntityTypeBuilder<TEntity> entity)
+        where TEntity : class, IAuditableEntity
+    {
+        entity.Property(x => x.FechaCreacion)
+            .HasDefaultValueSql("GETUTCDATE()");
+
+        entity.Property(x => x.CreadoPor)
+            .HasMaxLength(256);
+
+        entity.Property(x => x.ActualizadoPor)
+            .HasMaxLength(256);
     }
 }

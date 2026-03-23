@@ -2,7 +2,7 @@
 
 namespace Demosuelos.Models;
 
-public class Proyecto
+public class Proyecto : AuditableEntity
 {
     public int Id { get; set; }
 

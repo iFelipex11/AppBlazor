@@ -2,7 +2,7 @@
 
 namespace Demosuelos.Models;
 
-public class Muestra
+public class Muestra : AuditableEntity
 {
     public int Id { get; set; }
 

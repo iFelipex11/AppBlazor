@@ -1,11 +1,13 @@
 ﻿using Demosuelos.Api.Data;
 using Demosuelos.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Demosuelos.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class MuestrasController : ControllerBase
 {

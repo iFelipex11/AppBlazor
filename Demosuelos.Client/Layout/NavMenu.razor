@@ -9,54 +9,80 @@
         </div>
     </div>
 
-    <div class="nav-section-title">Navegación</div>
+    <AuthorizeView Context="authContext">
+        <Authorized>
+            <div class="nav-section-title">Navegacion</div>
 
-    <nav class="sidebar-nav">
-        <NavLink class="sidebar-link" href="" Match="NavLinkMatch.All">
-            <span class="bi bi-house-door-fill nav-icon"></span>
-            <span>Home</span>
-        </NavLink>
+            <nav class="sidebar-nav">
+                <NavLink class="sidebar-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill nav-icon"></span>
+                    <span>Home</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="proyectos">
-            <span class="bi bi-folder2-open nav-icon"></span>
-            <span>Proyectos</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="proyectos">
+                    <span class="bi bi-folder2-open nav-icon"></span>
+                    <span>Proyectos</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="puntos-muestreo">
-            <span class="bi bi-geo-alt-fill nav-icon"></span>
-            <span>Puntos de Muestreo</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="puntos-muestreo">
+                    <span class="bi bi-geo-alt-fill nav-icon"></span>
+                    <span>Puntos de Muestreo</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="muestras">
-            <span class="bi bi-box-seam-fill nav-icon"></span>
-            <span>Muestras</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="muestras">
+                    <span class="bi bi-box-seam-fill nav-icon"></span>
+                    <span>Muestras</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="tipos-ensayo">
-            <span class="bi bi-ui-checks-grid nav-icon"></span>
-            <span>Tipos de Ensayo</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="tipos-ensayo">
+                    <span class="bi bi-ui-checks-grid nav-icon"></span>
+                    <span>Tipos de Ensayo</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="parametros-ensayo">
-            <span class="bi bi-sliders2-vertical nav-icon"></span>
-            <span>Parámetros de Ensayo</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="parametros-ensayo">
+                    <span class="bi bi-sliders2-vertical nav-icon"></span>
+                    <span>Parametros de Ensayo</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="ensayos-realizados">
-            <span class="bi bi-clipboard2-pulse-fill nav-icon"></span>
-            <span>Ensayos Realizados</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="ensayos-realizados">
+                    <span class="bi bi-clipboard2-pulse-fill nav-icon"></span>
+                    <span>Ensayos Realizados</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="resultados-parametro">
-            <span class="bi bi-calculator-fill nav-icon"></span>
-            <span>Resultados de Parámetro</span>
-        </NavLink>
+                <NavLink class="sidebar-link" href="resultados-parametro">
+                    <span class="bi bi-calculator-fill nav-icon"></span>
+                    <span>Resultados de Parametro</span>
+                </NavLink>
 
-        <NavLink class="sidebar-link" href="resumen-muestra">
-            <span class="bi bi-file-earmark-bar-graph-fill nav-icon"></span>
-            <span>Resumen de Muestra</span>
-        </NavLink>
-    </nav>
+                <NavLink class="sidebar-link" href="resumen-muestra">
+                    <span class="bi bi-file-earmark-bar-graph-fill nav-icon"></span>
+                    <span>Resumen de Muestra</span>
+                </NavLink>
+
+                <AuthorizeView Roles="Admin" Context="adminContext">
+                    <NavLink class="sidebar-link" href="usuarios">
+                        <span class="bi bi-people-fill nav-icon"></span>
+                        <span>Usuarios</span>
+                    </NavLink>
+                </AuthorizeView>
+            </nav>
+        </Authorized>
+        <NotAuthorized>
+            <div class="nav-section-title">Acceso</div>
+
+            <nav class="sidebar-nav">
+                <NavLink class="sidebar-link" href="login">
+                    <span class="bi bi-box-arrow-in-right nav-icon"></span>
+                    <span>Iniciar Sesion</span>
+                </NavLink>
+
+                <NavLink class="sidebar-link" href="register">
+                    <span class="bi bi-person-plus-fill nav-icon"></span>
+                    <span>Registro</span>
+                </NavLink>
+            </nav>
+        </NotAuthorized>
+    </AuthorizeView>
 
     <div class="sidebar-footer">
         <div class="version-chip">

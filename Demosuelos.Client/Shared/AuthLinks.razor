@@ -1,0 +1,14 @@
+<AuthorizeView>
+    <Authorized>
+        <div class="auth-links-shell">
+            <span class="auth-user-text">Hola, @context.User.Identity?.Name</span>
+            <a href="logout" class="btn btn-outline-secondary btn-sm">Cerrar sesion</a>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="auth-links-shell">
+            <a href="register" class="btn btn-outline-primary btn-sm">Registro</a>
+            <a href="login" class="btn btn-primary btn-sm">Iniciar sesion</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>

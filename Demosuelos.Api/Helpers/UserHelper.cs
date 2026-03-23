@@ -1,7 +1,8 @@
-﻿using Demosuelos.Api.Entities;
+using Demosuelos.Api.Entities;
 using Demosuelos.Shared.DTOs;
 using Demosuelos.Shared.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Demosuelos.Api.Helpers;
 
@@ -26,9 +27,27 @@ public class UserHelper : IUserHelper
         return await _userManager.FindByEmailAsync(email);
     }
 
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        return await _userManager.Users.FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<List<User>> GetUsersAsync()
+    {
+        return await _userManager.Users
+            .OrderBy(x => x.FirstName)
+            .ThenBy(x => x.LastName)
+            .ToListAsync();
+    }
+
     public async Task<IdentityResult> AddUserAsync(User user, string password)
     {
         return await _userManager.CreateAsync(user, password);
+    }
+
+    public async Task<IdentityResult> UpdateUserAsync(User user)
+    {
+        return await _userManager.UpdateAsync(user);
     }
 
     public async Task CheckRoleAsync(UserType userType)
@@ -45,6 +64,11 @@ public class UserHelper : IUserHelper
     public async Task AddUserToRoleAsync(User user, UserType userType)
     {
         await _userManager.AddToRoleAsync(user, userType.ToString());
+    }
+
+    public async Task RemoveUserFromRoleAsync(User user, UserType userType)
+    {
+        await _userManager.RemoveFromRoleAsync(user, userType.ToString());
     }
 
     public async Task<bool> IsUserInRoleAsync(User user, UserType userType)
@@ -84,5 +108,10 @@ public class UserHelper : IUserHelper
     public async Task<IdentityResult> ResetPasswordAsync(User user, string token, string password)
     {
         return await _userManager.ResetPasswordAsync(user, token, password);
+    }
+
+    public async Task<IList<string>> GetRolesAsync(User user)
+    {
+        return await _userManager.GetRolesAsync(user);
     }
 }

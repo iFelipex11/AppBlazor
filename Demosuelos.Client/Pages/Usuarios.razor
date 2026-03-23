@@ -1,0 +1,214 @@
+@page "/usuarios"
+@attribute [Authorize(Roles = "Admin")]
+@using Demosuelos.Shared.DTOs
+@using Demosuelos.Shared.Enums
+@inject HttpClient Http
+
+<PageTitle>Usuarios</PageTitle>
+
+<h3>Usuarios</h3>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <EditForm Model="selectedUser" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Correo</label>
+                <InputText class="form-control" @bind-Value="selectedUser.Email" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Documento</label>
+                <InputText class="form-control" @bind-Value="selectedUser.Document" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Nombres</label>
+                <InputText class="form-control" @bind-Value="selectedUser.FirstName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Apellidos</label>
+                <InputText class="form-control" @bind-Value="selectedUser.LastName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Direccion</label>
+                <InputText class="form-control" @bind-Value="selectedUser.Address" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Rol</label>
+                <InputSelect class="form-select" @bind-Value="selectedUser.UserType">
+                    @foreach (var role in Enum.GetValues<UserType>())
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="form-check mb-3">
+                <InputCheckbox class="form-check-input" @bind-Value="selectedUser.IsActive" />
+                <label class="form-check-label">Usuario activo</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary me-2" disabled="@saving">Guardar cambios</button>
+            <button type="button" class="btn btn-secondary" @onclick="ReloadAsync" disabled="@saving">Recargar</button>
+        </EditForm>
+    </div>
+
+    <div class="col-lg-7">
+        @if (loading)
+        {
+            <p>Cargando usuarios...</p>
+        }
+        else if (users.Count == 0)
+        {
+            <p>No hay usuarios registrados.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td>@user.FullName</td>
+                            <td>@user.Email</td>
+                            <td>@user.UserType</td>
+                            <td>@(user.IsActive ? "Activo" : "Inactivo")</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" @onclick="() => SelectUserAsync(user.Id)">Editar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly UserAdminDTO selectedUser = new();
+    private List<UserListDTO> users = new();
+    private bool loading = true;
+    private bool saving;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            users = await Http.GetFromJsonAsync<List<UserListDTO>>("api/accounts/users") ?? new();
+
+            if (users.Count > 0 && string.IsNullOrWhiteSpace(selectedUser.Id))
+            {
+                await SelectUserAsync(users[0].Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar usuarios: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task SelectUserAsync(string id)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var user = await Http.GetFromJsonAsync<UserAdminDTO>($"api/accounts/users/{id}");
+            if (user is null)
+            {
+                errorMessage = "No fue posible cargar el usuario.";
+                return;
+            }
+
+            selectedUser.Id = user.Id;
+            selectedUser.Document = user.Document;
+            selectedUser.FirstName = user.FirstName;
+            selectedUser.LastName = user.LastName;
+            selectedUser.Address = user.Address;
+            selectedUser.Email = user.Email;
+            selectedUser.UserType = user.UserType;
+            selectedUser.IsActive = user.IsActive;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar el detalle del usuario: {ex.Message}";
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/accounts/users/{selectedUser.Id}", selectedUser);
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+                return;
+            }
+
+            successMessage = "Usuario actualizado correctamente.";
+            await LoadUsersAsync();
+            await SelectUserAsync(selectedUser.Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al actualizar el usuario: {ex.Message}";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(selectedUser.Id))
+        {
+            await SelectUserAsync(selectedUser.Id);
+        }
+    }
+}

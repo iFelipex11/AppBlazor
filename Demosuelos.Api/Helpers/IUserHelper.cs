@@ -9,11 +9,19 @@ public interface IUserHelper
 {
     Task<User?> GetUserAsync(string email);
 
+    Task<User?> GetUserByIdAsync(string id);
+
+    Task<List<User>> GetUsersAsync();
+
     Task<IdentityResult> AddUserAsync(User user, string password);
+
+    Task<IdentityResult> UpdateUserAsync(User user);
 
     Task CheckRoleAsync(UserType userType);
 
     Task AddUserToRoleAsync(User user, UserType userType);
+
+    Task RemoveUserFromRoleAsync(User user, UserType userType);
 
     Task<bool> IsUserInRoleAsync(User user, UserType userType);
 
@@ -28,4 +36,6 @@ public interface IUserHelper
     Task<string> GeneratePasswordResetTokenAsync(User user);
 
     Task<IdentityResult> ResetPasswordAsync(User user, string token, string password);
+
+    Task<IList<string>> GetRolesAsync(User user);
 }

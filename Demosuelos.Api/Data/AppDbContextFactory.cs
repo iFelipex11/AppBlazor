@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
@@ -18,6 +19,6 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 
         optionsBuilder.UseSqlServer(connectionString);
 
-        return new AppDbContext(optionsBuilder.Options);
+        return new AppDbContext(optionsBuilder.Options, new HttpContextAccessor());
     }
 }

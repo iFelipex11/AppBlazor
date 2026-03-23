@@ -2,7 +2,7 @@
 
 namespace Demosuelos.Models;
 
-public class ParametroEnsayo
+public class ParametroEnsayo : AuditableEntity
 {
     public int Id { get; set; }
 

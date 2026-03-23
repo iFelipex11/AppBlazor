@@ -1,5 +1,7 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="app-shell">
     <aside class="app-sidebar">
@@ -8,22 +10,26 @@
 
     <main class="app-main">
         <header class="app-topbar minimalist-topbar">
+            <AuthLinks />
         </header>
 
-        <section class="page-wrapper">
-            <div class="page-header-card">
-                <div>
-                    <p class="page-kicker">Laboratorio de suelos</p>
-                    <h1 class="page-title">@GetPageTitle()</h1>
-                </div>
+        <section class="page-wrapper @(ShouldCompressLayout() ? "page-wrapper-compact" : string.Empty)">
+            @if (ShouldShowPageHeader())
+            {
+                <div class="page-header-card">
+                    <div>
+                        <p class="page-kicker">Laboratorio de suelos</p>
+                        <h1 class="page-title">@GetPageTitle()</h1>
+                    </div>
 
-                <div class="page-header-chip">
-                    <span class="bi bi-activity"></span>
-                    <span>Demo operativa</span>
+                    <div class="page-header-chip">
+                        <span class="bi bi-activity"></span>
+                        <span>Demo operativa</span>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="page-content-card">
+            <div class="page-content-card @(ShouldCompressLayout() ? "page-content-card-plain" : string.Empty)">
                 @Body
             </div>
         </section>
@@ -31,6 +37,14 @@
 </div>
 
 @code {
+    private bool _isAuthenticated;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+    }
+
     private string GetPageTitle()
     {
         var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Trim('/').ToLowerInvariant();
@@ -38,15 +52,31 @@
         return relative switch
         {
             "" => "Dashboard",
-            "proyectos" => "Gestión de Proyectos",
+            "proyectos" => "Gestion de Proyectos",
             "puntos-muestreo" => "Puntos de Muestreo",
-            "muestras" => "Gestión de Muestras",
+            "muestras" => "Gestion de Muestras",
             "tipos-ensayo" => "Tipos de Ensayo",
-            "parametros-ensayo" => "Parámetros de Ensayo",
+            "parametros-ensayo" => "Parametros de Ensayo",
             "ensayos-realizados" => "Ensayos Realizados",
-            "resultados-parametro" => "Resultados de Parámetro",
+            "resultados-parametro" => "Resultados de Parametro",
             "resumen-muestra" => "Resumen de Muestra",
             _ => "Demosuelos"
         };
+    }
+
+    private bool ShouldShowPageHeader()
+    {
+        return _isAuthenticated && !IsAuthRoute();
+    }
+
+    private bool ShouldCompressLayout()
+    {
+        return !_isAuthenticated || IsAuthRoute();
+    }
+
+    private bool IsAuthRoute()
+    {
+        var relative = NavManager.ToBaseRelativePath(NavManager.Uri).Trim('/').ToLowerInvariant();
+        return relative is "login" or "register" or "logout" or "forgot-password";
     }
 }

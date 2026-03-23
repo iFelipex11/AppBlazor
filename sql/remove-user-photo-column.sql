@@ -1,0 +1,4 @@
+IF COL_LENGTH('AspNetUsers', 'Photo') IS NOT NULL
+BEGIN
+    ALTER TABLE AspNetUsers DROP COLUMN Photo;
+END

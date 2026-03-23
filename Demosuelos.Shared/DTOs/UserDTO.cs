@@ -25,9 +25,6 @@ public class UserDTO
     [Required(ErrorMessage = "El campo {0} es obligatorio.")]
     public string Address { get; set; } = null!;
 
-    [Display(Name = "Foto")]
-    public string? Photo { get; set; }
-
     [Display(Name = "Tipo de usuario")]
     public UserType UserType { get; set; } = UserType.User;
 
@@ -40,4 +37,10 @@ public class UserDTO
     [MinLength(6, ErrorMessage = "El campo {0} debe tener al menos {1} caracteres.")]
     [Required(ErrorMessage = "El campo {0} es obligatorio.")]
     public string Password { get; set; } = null!;
+
+    [Compare(nameof(Password), ErrorMessage = "La contraseña y la confirmación no son iguales.")]
+    [Display(Name = "Confirmación de contraseña")]
+    [MinLength(6, ErrorMessage = "El campo {0} debe tener al menos {1} caracteres.")]
+    [Required(ErrorMessage = "El campo {0} es obligatorio.")]
+    public string PasswordConfirm { get; set; } = null!;
 }

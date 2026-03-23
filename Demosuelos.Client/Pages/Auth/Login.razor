@@ -1,0 +1,88 @@
+@page "/login"
+@using Demosuelos.Shared.DTOs
+@inject HttpClient Http
+@inject ILoginService LoginService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Iniciar sesion</PageTitle>
+
+<div class="auth-page-shell">
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <p class="auth-kicker">Seguridad</p>
+            <h3>Iniciar sesion</h3>
+            <p class="auth-subtitle">Accede al laboratorio con tu cuenta registrada.</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <EditForm Model="loginModel" OnValidSubmit="LoginAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Correo</label>
+                <InputText class="form-control" @bind-Value="loginModel.Email" />
+                <ValidationMessage For="@(() => loginModel.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contrasena</label>
+                <InputText type="password" class="form-control" @bind-Value="loginModel.Password" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit" disabled="@sending">
+                @(sending ? "Ingresando..." : "Iniciar sesion")
+            </button>
+        </EditForm>
+
+        <div class="auth-support-link">
+            <a href="forgot-password">Olvide mi contrasena</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly LoginDTO loginModel = new();
+    private string? errorMessage;
+    private bool sending;
+
+    private async Task LoginAsync()
+    {
+        errorMessage = null;
+        sending = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/accounts/login", loginModel);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+                return;
+            }
+
+            var token = await response.Content.ReadFromJsonAsync<TokenDTO>();
+            if (token is null || string.IsNullOrWhiteSpace(token.Token))
+            {
+                errorMessage = "No fue posible obtener el token de acceso.";
+                return;
+            }
+
+            await LoginService.LoginAsync(token.Token);
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al iniciar sesion: {ex.Message}";
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+}

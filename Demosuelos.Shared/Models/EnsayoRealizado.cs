@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Demosuelos.Models;
 
-public class EnsayoRealizado
+public class EnsayoRealizado : AuditableEntity
 {
     public int Id { get; set; }
 

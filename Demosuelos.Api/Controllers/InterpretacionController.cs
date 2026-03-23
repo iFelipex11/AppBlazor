@@ -1,10 +1,12 @@
 ﻿using Demosuelos.Api.Services;
 using Demosuelos.Shared.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Demosuelos.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class InterpretacionController : ControllerBase
 {
